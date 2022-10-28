@@ -128,8 +128,9 @@ def check_args():
     if not os.path.isdir(args['base_path']):
         try:
             os.mkdir(args['base_path'])
-        except Exception:
+        except Exception as e:
             log.error("Could not open base path! Execution halted!")
+            log.debug(str(e))
             exit()
 
     # Set up logging to file
@@ -203,8 +204,9 @@ def write_out_json(my_dict, file_name):
             fo.write(s)
             fo.close()
         return s
-    except Exception:
+    except Exception as e:
         log.error("Failed to write JSON!")
+        log.debug(str(e))
         stats['errors'] += 1
         return
 
@@ -327,8 +329,9 @@ def load_archive():
                 log.debug("Load Archive: File: \"" + archive_fname + "\" loaded successfully!")
                 file.close()
             return True
-        except Exception:
+        except Exception as e:
             log.error("Load Archive: failed to open archive file!")
+            log.debug(str(e))
             return False
 
 
@@ -352,8 +355,10 @@ def add_to_archive(song_id: str):
             file.write('\n' + song_id)
             file.close()
         return True
-    except Exception:
+    except Exception as e:
         log.error("Save Archive: failed to open archive file!")
+        log.debug(str(e))
+        stats['errors'] += 1
         return False
 
 
@@ -400,9 +405,10 @@ def parse_url(url: str):
             album_id = ytm.get_album_browse_id(url_props['playlist_id'])
             url_props['type'] = 'Album'
             url_props['id'] = album_id
-        except Exception:
+        except Exception as e:
             log.warning("Parse URL: Failed to get album browse ID for playlist ID: \"" + url_props[
                 'id'] + "\", using playlist ID instead")
+            log.debug(str(e))
             stats['warnings'] += 1
     elif url_props['id'].startswith('MPREb_'):
         # ID represents an album
@@ -441,8 +447,9 @@ def get_album_song_instead_of_video(album: dict, song: dict):
     try:
         log.debug("Getting search results for: \"" + search_query + "\"...")
         search_results = ytm.search(search_query, filter='songs', ignore_spelling=True)
-    except Exception:
+    except Exception as e:
         log.error("API Error: failed to get search results for query: " + search_query + ".")
+        log.debug(str(e))
         stats['errors'] += 1
         return
 
@@ -480,8 +487,9 @@ def get_album(album_id: str, return_original_request: bool = False):
     data_album = None
     try:
         data_album = ytm.get_album(album_info['id'])
-    except Exception:
+    except Exception as e:
         log.error("API Error: album request failed for album ID " + album_info['id'] + ".")
+        log.debug(str(e))
         stats['errors'] += 1
         return
 
@@ -505,7 +513,6 @@ def get_album(album_id: str, return_original_request: bool = False):
 
         log.debug("Title: " + album_info['title'] + ", Artists: " + join_artists(
             album_info['artists']) + ", Total: " + str(album_info['total']))
-        stats['albums'] += 1
         return album
 
 
@@ -520,8 +527,9 @@ def get_song(song_id: str, get_album_info: bool = True, track_index: int = None,
     data_wp = None
     try:
         data_wp = ytm.get_watch_playlist(song_id)
-    except Exception:
+    except Exception as e:
         log.error("API Error: getting watch playlist for song ID " + song_id + " failed!")
+        log.debug(str(e))
         stats['errors'] += 1
         return
 
@@ -559,8 +567,9 @@ def get_song(song_id: str, get_album_info: bool = True, track_index: int = None,
                     log.debug("Song lyrics added successfully!")
                     song['lyrics'] = data_lyrics['lyrics']
                     song['lyrics_source'] = data_lyrics['source']
-            except Exception:
+            except Exception as e:
                 log.error("API Error: lyrics request error for song ID " + song_id + ".")
+                log.debug(str(e))
                 stats['errors'] += 1
 
         # Add album information (only for songs)
@@ -631,13 +640,15 @@ def download_cover_art(url: str, cover_file: str = None):
             try:
                 img.save(cover_file, format=img_format)
                 log.info("Download Art: Cover art saved: " + cover_file)
-            except Exception:
+            except Exception as e:
                 log.error("Download Art: Failed to write cover art to file: " + cover_file)
+                log.debug(str(e))
                 stats['errors'] += 1
         img_byte_arr = img_byte_arr.getvalue()
         return img_byte_arr
-    except Exception:
+    except Exception as e:
         log.error("Download Art: Failed to get cover art!")
+        log.debug(str(e))
         stats['errors'] += 1
         return
 
@@ -686,8 +697,9 @@ def download_audio(song: dict, show_info: bool = True):
                 log.error("Download Song: Failed to download song ID: " + song['id'] + " from YouTube!")
                 stats['errors'] += 1
                 return False
-        except Exception:
+        except Exception as e:
             log.error("Download Song: Failed to download song ID: " + song['id'] + " from YouTube!")
+            log.debug(str(e))
             stats['errors'] += 1
             return False
 
@@ -703,7 +715,7 @@ def download_audio(song: dict, show_info: bool = True):
             if 'year' in song:
                 song_metadata['year'] = song['year']
 
-            if 'lyrics' in song:
+            if 'lyrics' in song and song['lyrics']:
                 song_metadata['lyrics'] = song['lyrics']
                 song_comment = "Lyrics " + song['lyrics_source'] + "\n" + song_comment
 
@@ -728,8 +740,9 @@ def download_audio(song: dict, show_info: bool = True):
             if show_info:
                 log.info("Song: " + song['title'] + " - " + join_artists(song['artists']) + " [" + song['id'] + "] downloaded successfully!")
             return 'download_ok'
-        except Exception:
+        except Exception as e:
             log.error("Download Song: Failed to add metadata to file : \"" + out_file_ext + "\"!")
+            log.debug(str(e))
             return 'metadata_fail'
     else:
         log.info("Download skipped as specified by '--skip-download' argument!")
@@ -792,6 +805,7 @@ def download_album_with_songs(album_id: str):
                 log.error("Failed to get data about song ID: " + track['videoId'] + ", skipping it...")
                 stats['errors'] += 1
         log.debug("Album and song data complete!")
+        stats['albums'] += 1
         return album
     return
 
@@ -802,8 +816,9 @@ def download_playlist(playlist_id: str):
     data_playlist = None
     try:
         data_playlist = ytm.get_playlist(playlist_id, limit=5000)
-    except Exception:
+    except Exception as e:
         log.error("Get Playlist: API request failed for playlist ID: " + playlist_id)
+        log.debug(str(e))
         stats['errors'] += 1
         return
 
