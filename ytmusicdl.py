@@ -98,7 +98,7 @@ def setup_argparse():
     parser.add_argument('-o', '--output-template', type=str, default=config['default_output_template'],
                         help="Output template for downloaded songs")
     parser.add_argument('-a', '--archive', type=str, help="Path to file that keeps record of the downloaded songs")
-    parser.add_argument('-b', '--batch', action='store_true', help="R|Treat URL arguments as paths to files containing a list of URLs or IDs\nSpecify \"-\" for input to be taken from console (stdin).")
+    # parser.add_argument('-b', '--batch', action='store_true', help="R|Treat URL arguments as paths to files containing a list of URLs or IDs\nSpecify \"-\" for input to be taken from console (stdin).")
     parser.add_argument('--write-json', action='store_true',
                         help="Write JSON with information about song(s) (follows output template)")
     parser.add_argument('--write-cover', action='store_true',
