@@ -113,14 +113,21 @@ def setup_argparse():
 
 
 def check_args():
+    global args
+
     # Enable verbose logging
     if args['verbose']:
         log.setLevel(logging.DEBUG)
 
-    # Check the base path
-    if not os.path.isdir(os.path.join(os.getcwd(), args['base_path'])):
+    # Check if base path is relative or absolute
+    if not os.path.isabs(args['base_path']):
+        # If relative, turn it into an absolute path
+        args['base_path'] = os.path.join(os.getcwd(), args['base_path'])
+
+    # If base path doesn't exist, create it
+    if not os.path.isdir(args['base_path']):
         try:
-            os.mkdir(os.path.join(os.getcwd(), args['base_path']))
+            os.mkdir(args['base_path'])
         except Exception:
             log.error("Could not open base path! Execution halted!")
             exit()
@@ -137,6 +144,9 @@ def check_args():
     if not check_output_template(args['output_template']):
         log.error("Specified output template: " + args['output_template'] + " is invalid.")
         exit()
+
+    # Ensure format is lower case
+    args['format'] = args['format'].lower()
 
 
 # Set up logging
@@ -283,12 +293,14 @@ def parse_output_template(templ_str: str, extension: str, song: dict):
             if not val:
                 if keys[-1] == '':
                     # The last key is empty and the previous keys haven't matched
+                    # Supress the placeholder string
                     val = ''
                     after = ''
                 else:
                     # No key has matched to available params, using placeholder instead
                     val = config['unknown_placeholder']
             out_str += val + after
+            # Jump to the closing bracket position
             i = close_pos
         else:
             out_str += templ_str[i]
@@ -299,7 +311,7 @@ def parse_output_template(templ_str: str, extension: str, song: dict):
 def combine_path_with_base(path: str):
     if os.path.isabs(path):
         return path
-    return os.path.join(os.getcwd(), os.path.expandvars(args['base_path']), path)
+    return os.path.join(os.path.expandvars(args['base_path']), path)
 
 
 def load_archive():
@@ -308,15 +320,16 @@ def load_archive():
     if not args['archive']:
         return False
     archive_fname = combine_path_with_base(args['archive'])
-    try:
-        with open(archive_fname, 'r') as file:
-            archive = file.read().splitlines()
-            log.debug("Load Archive: File: \"" + archive_fname + "\" loaded successfully!")
-            file.close()
-        return True
-    except Exception:
-        log.error("Load Archive: failed to open archive file!")
-        return False
+    if os.path.exists(archive_fname):
+        try:
+            with open(archive_fname, 'r') as file:
+                archive = file.read().splitlines()
+                log.debug("Load Archive: File: \"" + archive_fname + "\" loaded successfully!")
+                file.close()
+            return True
+        except Exception:
+            log.error("Load Archive: failed to open archive file!")
+            return False
 
 
 def in_archive(song_id: str, show_message: bool = True):
@@ -713,7 +726,7 @@ def download_audio(song: dict, show_info: bool = True):
             stats['songs'] += 1
             add_to_archive(song['id'])
             if show_info:
-                log.info("Song: " + song['title'] + " - " + join_artists(song['artists']) + " [" + song['id'] + "] downloaded succesfully!")
+                log.info("Song: " + song['title'] + " - " + join_artists(song['artists']) + " [" + song['id'] + "] downloaded successfully!")
             return 'download_ok'
         except Exception:
             log.error("Download Song: Failed to add metadata to file : \"" + out_file_ext + "\"!")
@@ -826,19 +839,20 @@ def download_playlist(playlist_id: str):
                 log.error("Failed to get data about song ID: " + track['videoId'] + ", skipping it...")
                 stats['errors'] += 1
 
-        log.info("Playlist ID: " + playlist['id'] + " title: " + playlist['title'] + " downloaded succesfully!")
+        log.info("Playlist ID: " + playlist['id'] + " title: " + playlist['title'] + " downloaded successfully!")
         stats['playlists'] += 1
         return playlist
     return
 
 
 def main():
-    print("YouTube Music Downloader, version 2.0")
+    print("YouTube Music Downloader")
     setup_logging()
     setup_argparse()
 
     if args['about']:
         print("YouTube Music Downloader by RaduTek")
+        print("https://github.com/RaduTek/YTMusicDL")
 
     setup_stats()
     check_args()
