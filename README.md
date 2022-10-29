@@ -1,22 +1,33 @@
 # YTMusicDL
 Command line tool to download music from YT Music with appropriate metadata.
 
-Note: This tool is still in its infancy, expect bugs. Please report any issues encountered with this tool.
+**Note:** This tool is still in its infancy, expect bugs. Please report any issues encountered with this tool.
 
 ## Setup
-**Prerequisites** (install using `pip`):
 
-* `ytmusicapi` [(GitHub)](https://github.com/sigma67/ytmusicapi) [(Documentation)](https://ytmusicapi.readthedocs.io/en/latest/index.html)
-* `music_tag` [(GitHub)](https://github.com/KristoforMaynard/music-tag) [(PyPI)](https://pypi.org/project/music-tag/)
-* `yt_dlp` [(GitHub)](https://github.com/yt-dlp/yt-dlp/)
-* `FFMPEG` (must be added to path - required by `yt_dlp`) [(GitHub - yt_dlp provided builds)](https://github.com/yt-dlp/FFmpeg-Builds)
+`ytmusicdl.py` is easy to set up and has been tested on Windows and Linux. Make sure the prerequisites listed below are installed on your system.
+
+Prebuilt version is planned for the future (indefinite).
+
+### Prerequisites:
+
+* **Python** 3.7+ [(Official Website)](https://www.python.org/downloads/)
+* `ytmusicapi` [(GitHub)](https://github.com/sigma67/ytmusicapi) [(Documentation)](https://ytmusicapi.readthedocs.io/en/latest/index.html) (install using `pip`)
+* `music_tag` [(GitHub)](https://github.com/KristoforMaynard/music-tag) [(PyPI)](https://pypi.org/project/music-tag/) (install using `pip`)
+* `yt_dlp` [(GitHub)](https://github.com/yt-dlp/yt-dlp/) (install using `pip`)
+* `FFMPEG` (required by `yt_dlp`) 
+  * **For Windows**: must be added to `%PATH%` [(Recommended: yt_dlp provided builds - GitHub)](https://github.com/yt-dlp/FFmpeg-Builds)
+  * **For Linux**: Install from your package manager
 
 ## Usage
 
-    ytmusicdl.py [-h] [-f {opus,m4a,mp3}] [-q QUALITY] [-p BASE_PATH] [-o OUTPUT_TEMPLATE] [-a ARCHIVE] [--write-json] [--write-cover] [--no-lyrics] [--skip-download]
-                        [--log LOG] [-v] [--about]
+    usage: ytmusicdl.py [-h] [-f {opus,m4a,mp3}] [-q QUALITY] [-p BASE_PATH] [-o OUTPUT_TEMPLATE] [-a ARCHIVE] 
+                        [--write-json] [--write-cover] [--skip-existing] [--no-lyrics] [--skip-download] 
+                        [--playlist-limit PLAYLIST_LIMIT] [--log LOG] [-v] [--log-verbose] [--about]
                         URL [URL ...]
- 
+    
+    Downloads songs from YT Music with appropriate metadata
+    
     positional arguments:
       URL                   List of URL(s) to download
     
@@ -34,10 +45,14 @@ Note: This tool is still in its infancy, expect bugs. Please report any issues e
                             Path to file that keeps record of the downloaded songs
       --write-json          Write JSON with information about song(s) (follows output template)
       --write-cover         Write each song's album cover to a file (follows output template)
+      --skip-existing       Skip over existing files
       --no-lyrics           Don't obtain lyrics
       --skip-download       Skip downloading songs
+      --playlist-limit PLAYLIST_LIMIT
+                            Limit the number of songs to be downloaded from a playlist
       --log LOG             Path to verbose log output file
-      -v, --verbose         Show all debug messages on console
+      -v, --verbose         Show all debug messages on console and log
+      --log-verbose         Save all debug messages to the log
       --about               Display version information (must specify at least one (dummy) URL)
 
 ## Format and quality selection
@@ -80,6 +95,32 @@ Example: `{song_index|+ - }{song_title}.{ext}` will parse to `1 - Song Title.opu
 
 Notice: The output template must end in `.{ext}`, as hard-coding a file extension would cause issues.
 
+### Available values for template
+
+* Song related
+  * `song_id`, `song_title`, `song_duration`, `song_year`
+  * `song_type` - `Song` or `Video`
+  * `song_artist` - first song artist
+  * `song_artists` - all song artists, separated by `,&nbsp;`
+* Album related
+  * `song_index` - song's index in an album
+  * `album_total` - total number of songs in an album
+  * `album_id`, `album_title`
+  * `album_type` - `Album` or `Single`, as seen on YT Music album page
+  * `album_duration`
+  * `album_artist` - first album artist
+  * `album_artists` - all album artists, separated by `,&nbsp;`
+* **Playlist related**
+  * `song_playlist_index` - song's index in a playlist
+  * `playlist_total` - total number of songs in a playlist
+  * `playlist_id`, `playlist_title`
+  * `playlist_author` - first playlist author
+  * `playlist_authors` - all playlist authors (collaborators), separated by `,&nbsp;`
+  * `playlist_visibility` - `Public`, `Unlisted` or `Private`
+* **Other**
+  * `date`, `time`, `date_time` - date and/or approximate time of download
+  * `ext` - **can only be used at the end of the template**
+
 ## Archive file
 
 The archive file will store a list of song IDs that have been previously downloaded.
@@ -116,3 +157,7 @@ Downloads the specified URL(s) with the following options:
 * Output template: `{album_artist|song_artist}/{album_title|song_title}/{song_index|+ - }{song_title}.{ext}`
   * Example for audio-only song: `Album Artist/Album Title/1 - Song Title.ext`
   * Example for music video: `Song Artist/Song Title/Song Title.ext`
+
+## Notes
+
+* `ytmusicdl.py` will download music videos as **audio only**.
