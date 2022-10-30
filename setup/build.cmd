@@ -16,7 +16,7 @@ cls
 
 echo Building YTMusicDL for Windows...
 echo.
-pyinstaller --icon "..\other\YTMusicDL_icon.ico" --onefile "..\ytmusicdl.py"
+pyinstaller --clean --icon "..\other\YTMusicDL_icon.ico" --onefile "..\ytmusicdl.py"
 
 pause
 exit /b
