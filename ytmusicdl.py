@@ -4,6 +4,7 @@ import json
 import logging
 import sys
 from datetime import datetime
+from datetime import timedelta
 import argparse
 import os
 import io
@@ -21,18 +22,19 @@ from urllib.parse import parse_qs
 # Configuration and declarations
 
 # Default configuration
-config = {
+default_config = {
     'default_log_level': logging.INFO,
     'album_song_instead_of_video': True,  # Gets album song instead of video when downloading album
     'artist_separator': '; ',
     'filename_separator': ', ',
-    'default_format': 'opus',
-    'default_quality': '0',  # Maximum/optimized quality
-    'default_output_template': '{song_title} - {song_artist} [{song_id}].{ext}',
-    'default_playlist_limit': 5000,  # Default is YT's limit for playlist length
+    'format': 'opus',
+    'quality': '0',  # Maximum/optimized quality
+    'output_template': '{song_title} - {song_artist} [{song_id}].{ext}',
+    'playlist_limit': 5000,  # Default is YT's limit for playlist length
+    'download_limit': 0,  # 0 means no limit
     'file_sanitize_replace_chr': '_',
     'supress_ytdlp_output': True,
-    'cover_format': 'png',  # Can be 'png' or 'jpeg'
+    'cover_format': 'png',  # Can be 'png' or 'jpg'
     'date_format': '%d-%m-%Y',
     'time_format': '%H-%M-%S',
     'datetime_format': '%d-%m-%Y %H-%M-%S',
@@ -41,6 +43,7 @@ config = {
 
 formats_ext = ['opus', 'm4a', 'mp3']
 formats_ytdlp = {'opus': 'opus', 'm4a': 'm4a', 'mp3': 'mp3'}
+cover_formats = ['png', 'jpg']
 
 song_types = {
     "MUSIC_VIDEO_TYPE_ATV": 'Song',
@@ -76,8 +79,15 @@ ytm: YTMusic
 parser: argparse.ArgumentParser
 args: dict
 log: logging.Logger
-stats: dict
 archive = list()
+stats = {
+    'songs': 0,
+    'albums': 0,
+    'playlists': 0,
+    'errors': 0,
+    'warnings': 0,
+    'has_notified_limit_reached': False
+}
 
 
 # Set up argument parsing
@@ -96,26 +106,31 @@ def setup_argparse():
         formatter_class=SmartFormatter
     )
     parser.add_argument('urls', metavar='URL', type=str, nargs='+', help="List of URL(s) to download")
-    parser.add_argument('-f', '--format', type=str, choices=formats_ext, default=config['default_format'],
+    parser.add_argument('-f', '--format', type=str.lower, choices=formats_ext, default=default_config['format'],
                         help="Audio output format")
-    parser.add_argument('-q', '--quality', type=str, default=config['default_quality'],
-                        help="Audio quality: VBR (best: 0 - worst: 9) or CBR (e.g. 256k)")
+    parser.add_argument('-q', '--quality', type=int, default=default_config['quality'],
+                        help="Audio quality: VBR (best: 0 - worst: 9) or CBR (e.g. 256)")
     parser.add_argument('-p', '--base-path', type=str, default=os.getcwd(), help="Base output path (default is current working directory)")
-    parser.add_argument('-o', '--output-template', type=str, default=config['default_output_template'],
+    parser.add_argument('-o', '--output-template', type=str, default=default_config['output_template'],
                         help="Output template for downloaded songs")
     parser.add_argument('-a', '--archive', type=str, help="Path to file that keeps record of the downloaded songs")
-    # TODO: Batch file processing
-    # parser.add_argument('-b', '--batch', action='store_true', help="R|Treat URL arguments as paths to files containing a list of URLs or IDs\nSpecify \"-\" for input to be taken from console (stdin).")
+    parser.add_argument('-b', '--batch', action='store_true', help="R|Treat URL arguments as paths to files containing a list of URLs or IDs (one per line)" +
+                                                                   "\nSpecify \"-\" for input to be taken from console (stdin)")
     parser.add_argument('--write-json', action='store_true',
-                        help="Write JSON with information about song(s) (follows output template)")
+                        help="Write JSON with information about each song (follows output template)")
+    parser.add_argument('--cover-format', type=str.lower, choices=cover_formats, default=default_config['cover_format'],
+                        help=f"Set the cover image format (png or jpg)")
     parser.add_argument('--write-cover', action='store_true',
                         help="Write each song's album cover to a file (follows output template)")
+    parser.add_argument('--write-lyrics', action='store_true',
+                        help="Write each song's lyrics to a file (follows output template)")
     parser.add_argument('--no-lyrics', action='store_true', help="Don't obtain lyrics")
     parser.add_argument('--skip-existing', action='store_true', help="Skip over existing files")
     parser.add_argument('--skip-download', action='store_true', help="Skip downloading songs")
-    parser.add_argument('--playlist-limit', type=int, default=config['default_playlist_limit'], help="Limit the number of songs to be downloaded from a playlist")
-    parser.add_argument('--log', type=str, help="Path to verbose log output file")
+    parser.add_argument('--download-limit', type=int, default=default_config['download_limit'], help="Limit the number of songs to be downloaded in an instance")
+    parser.add_argument('--playlist-limit', type=int, default=default_config['playlist_limit'], help="Limit the number of songs to be downloaded from a playlist")
     parser.add_argument('-v', '--verbose', action='store_true', help="Show all debug messages on console and log")
+    parser.add_argument('--log', type=str, help="Path to verbose log output file")
     parser.add_argument('--log-verbose', action='store_true', help="Save all debug messages to the log")
     parser.add_argument('--about', action='store_true', help="Display version information (must specify at least one (dummy) URL)")
 
@@ -126,10 +141,10 @@ def setup_argparse():
 def setup_logging():
     global log
     log = logging.getLogger("YTMusicDL")
-    log.setLevel(config['default_log_level'])
+    log.setLevel(default_config['default_log_level'])
 
     log_handler = logging.StreamHandler(sys.stdout)
-    log_handler.setLevel(config['default_log_level'])
+    log_handler.setLevel(default_config['default_log_level'])
     log_formatter = logging.Formatter('%(levelname)s: %(message)s')
     log_handler.setFormatter(log_formatter)
     log.addHandler(log_handler)
@@ -138,22 +153,13 @@ def setup_logging():
 # Set up statistics
 def setup_stats():
     global stats
-    stats = {
-        'songs': 0,
-        'albums': 0,
-        'playlists': 0,
-        'errors': 0,
-        'warnings': 0,
-        'start_time': datetime.now(),
-        'end_time': None,
-        'duration': None
-    }
-    log.debug('Statistics started! Start time: ' + str(stats['start_time'].strftime(config['datetime_format'])))
+    stats['start_time'] = datetime.now()
+    log.debug('Statistics started! Start time: ' + str(stats['start_time'].strftime(default_config['datetime_format'])))
 
 
 def finish_stats():
     stats['end_time'] = datetime.now()
-    stats['duration'] = duration = stats['end_time'] - stats['start_time']
+    stats['duration'] = stats['end_time'] - stats['start_time']
     log_msg = "Processed: "
     if stats['playlists'] > 0:
         log_msg += str(stats['playlists']) + " playlist" + ("s" if stats['playlists'] > 1 else "") + ", "
@@ -207,9 +213,6 @@ def check_args():
         log.error("Specified output template: " + args['output_template'] + " is invalid.")
         exit()
 
-    # Ensure format is lower case
-    args['format'] = args['format'].lower()
-
 
 # Write dict to JSON file
 def write_out_json(my_dict, file_name):
@@ -226,7 +229,7 @@ def write_out_json(my_dict, file_name):
         return
 
 
-def sanitize_filename(filename: str, replace: chr = config['file_sanitize_replace_chr']):
+def sanitize_filename(filename: str, replace: chr = default_config['file_sanitize_replace_chr']):
     allowed_chars = ' .,!@#$()[]-+=_'
     new_fn = ''
     for char in filename:
@@ -276,7 +279,7 @@ def parse_output_template(templ_str: str, extension: str, song: dict):
     # Parse artists separately
     if 'artists' in song.keys() and len(song['artists']) > 0:
         templ_values['song_artist'] = song['artists'][0]['name']  # First artist only
-        templ_values['song_artists'] = join_artists(song['artists'], config['filename_separator'])
+        templ_values['song_artists'] = join_artists(song['artists'], default_config['filename_separator'])
 
     # Parse values for album data
     if 'album' in song.keys():
@@ -298,12 +301,12 @@ def parse_output_template(templ_str: str, extension: str, song: dict):
         # Parse authors separately
         if 'authors' in playlist.keys() and len(playlist['authors']) > 0:
             templ_values['playlist_author'] = playlist['authors'][0]['name']  # First author only
-            templ_values['playlist_authors'] = join_artists(playlist['authors'], config['filename_separator'])
+            templ_values['playlist_authors'] = join_artists(playlist['authors'], default_config['filename_separator'])
 
     # Additional values
-    templ_values['date_time'] = templ_values['datetime'] = datetime.now().strftime(config['datetime_format'])
-    templ_values['date'] = datetime.now().strftime(config['date_format'])
-    templ_values['time'] = datetime.now().strftime(config['time_format'])
+    templ_values['date_time'] = templ_values['datetime'] = datetime.now().strftime(default_config['datetime_format'])
+    templ_values['date'] = datetime.now().strftime(default_config['date_format'])
+    templ_values['time'] = datetime.now().strftime(default_config['time_format'])
 
     # Sanitize all template values for file names
     for key, value in templ_values.items():
@@ -345,7 +348,7 @@ def parse_output_template(templ_str: str, extension: str, song: dict):
                     after = ''
                 else:
                     # No key has matched to available params, using placeholder instead
-                    val = config['unknown_placeholder']
+                    val = default_config['unknown_placeholder']
             parsed_str += val + after
             # Jump to the closing bracket position
             i = close_pos
@@ -407,66 +410,18 @@ def add_to_archive(song_id: str):
         return False
 
 
-def parse_url(url: str):
-    url_props = dict()
-    url_props['original'] = url
-
-    # Check if string is a valid URL
-    if url.startswith('https://') or url.startswith('http://'):
-        url_props['is_url'] = True
-        parsed_url = urlparse(url)
-        parsed_qs = parse_qs(parsed_url.query)
-        if 'watch' in url and 'v' in parsed_qs:
-            # Watch URL for songs
-            url_props['id'] = url_props['song_id'] = parsed_qs['v'][0]
-        elif 'playlist' in url and 'list' in parsed_qs:
-            # Playlist URL for playlists
-            url_props['id'] = url_props['playlist_id'] = parsed_qs['list'][0]
-        elif 'browse' in url:
-            # Browse url is for album IDs (starting with 'MPREb_')
-            url_props['id'] = parsed_url.path.rsplit('/', 1)[-1]
-        else:
-            log.error("Parse URL: Invalid URL Address: \"" + url + "\"!")
-            stats['errors'] += 1
-            return
-    else:
-        # Assume given string is a plain ID
-        if ' ' not in url:
-            url_props['is_url'] = False
-            url_props['id'] = url
-        else:
-            log.error("Parse URL: Invalid ID string: \"" + url + "\"!")
-            stats['errors'] += 1
-            return
-
-    if url_props['id'].startswith('PLLL'):
-        # ID represents a playlist
-        url_props['type'] = 'Playlist'
-    elif url_props['id'].startswith('OLAK5uy_'):
-        # ID represents an album playlist
-        # Get the album playlist ID for downloading
-        url_props['type'] = 'Album Playlist'
-        try:
-            album_id = ytm.get_album_browse_id(url_props['playlist_id'])
-            url_props['type'] = 'Album'
-            url_props['id'] = album_id
-        except Exception:
-            log.warning("Parse URL: Failed to get album browse ID for playlist ID: \"" + url_props[
-                'id'] + "\", using playlist ID instead")
-            log.debug(format_exc())
-            stats['warnings'] += 1
-    elif url_props['id'].startswith('MPREb_'):
-        # ID represents an album
-        url_props['type'] = 'Album'
-    else:
-        # ID represents a song
-        url_props['type'] = 'Song'
-
-    return url_props
+def check_download_limit():
+    global stats
+    if 0 < args['download_limit'] <= stats['songs']:
+        if not stats['has_notified_limit_reached']:
+            log.info(f"Download limit reached: {args['download_limit']}!")
+            stats['has_notified_limit_reached'] = True
+        return True
+    return False
 
 
 # Join artist list with defined separator
-def join_artists(artists: list, separator: str = config['artist_separator']):
+def join_artists(artists: list, separator: str = default_config['artist_separator']):
     artist_names = list()
     for artist in artists:
         artist_names.append(artist['name'])
@@ -699,7 +654,7 @@ def download_cover_art(url: str, cover_file: str = None):
     try:
         response = requests.get(url)
         img = Image.open(BytesIO(response.content))
-        img_format = config['cover_format'].upper()
+        img_format = ('jpeg' if args['cover_format'] == 'jpg' else args['cover_format']).upper()
         img_byte_arr = io.BytesIO()
         img.save(img_byte_arr, format=img_format)
         if cover_file:
@@ -723,6 +678,9 @@ def download_audio(song: dict, show_info: bool = True):
     if in_archive(song['id']):
         return 'skip_archive'
 
+    if check_download_limit():
+        return 'skip_download_limit'
+
     if show_info:
         log.info(f"Downloading song: {song['title']} - {join_artists(song['artists'])} [{song['id']}]...")
 
@@ -739,19 +697,26 @@ def download_audio(song: dict, show_info: bool = True):
         if args['skip_existing']:
             log.info(f"Output file already exists: {out_file_ext_rel}, skipping over it!")
             return 'skip_existing'
-        if os.path.isdir(out_file_ext):
-            log.warning(f"Output file already exists: {out_file_ext_rel}, is a directory, skipping over it!")
+        if not os.path.isfile(out_file_ext):
+            log.warning(f"Output file already exists: {out_file_ext_rel}, is a directory or link, skipping over it!")
+            stats['warnings'] += 1
             return 'skip_existing'
         else:
             log.warning(f"Output file already exists: {out_file_ext_rel}, it will be overwritten!")
+            stats['warnings'] += 1
             # Delete file before writing over
-            os.remove(out_file_ext)
+            try:
+                os.remove(out_file_ext)
+            except Exception:
+                log.error(f"Failed to delete existing file: {out_file_ext_rel}, file is either in use or you do not have enough permissions to delete it.")
+                stats['errors'] += 1
+                return 'fail_ioerr'
 
     cover_bin = None
     if 'cover' in song:
         cover_file = None
         if args['write_cover']:
-            cover_file = out_file % {'ext': config['cover_format']}
+            cover_file = out_file % {'ext': args['cover_format']}
         cover_bin = download_cover_art(song['cover'], cover_file)
 
     if args['write_json']:
@@ -759,10 +724,23 @@ def download_audio(song: dict, show_info: bool = True):
             if show_info:
                 log.info("Song data JSON written successfully!")
 
+    if args['write_lyrics']:
+        if 'lyrics' in song and song['lyrics']:
+            try:
+                with open(out_file % {'ext': 'txt'}, 'w') as fo:
+                    fo.write(song['lyrics'] + "\n\nLyrics " + song['lyrics_source'])
+                    fo.close()
+            except Exception:
+                log.error("Failed to write lyrics to file!")
+                stats['errors'] += 1
+        else:
+            log.warning("Lyrics unavailable!")
+            stats['warnings'] += 1
+
     if not args['skip_download']:
         ytdlp_options = {
             'format': out_format + '/bestaudio/best',
-            'quiet': config['supress_ytdlp_output'],
+            'quiet': default_config['supress_ytdlp_output'],
             'outtmpl': out_file,
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
@@ -776,12 +754,12 @@ def download_audio(song: dict, show_info: bool = True):
             if error_code or not os.path.exists(out_file_ext):
                 log.error(f"Failed to download song ID: {song['id']} from YouTube!")
                 stats['errors'] += 1
-                return False
+                return 'fail_download'
         except Exception:
             log.error(f"Failed to download song ID: {song['id']} from YouTube!")
             log.debug(format_exc())
             stats['errors'] += 1
-            return False
+            return 'fail_download'
 
         try:
             # Add metadata to song file
@@ -789,7 +767,7 @@ def download_audio(song: dict, show_info: bool = True):
 
             song_comment = f"Song ID: {str(song['id'])}\n"
             if 'type' in song:
-                song_comment += f"Type: [str(song['type'])]\n"
+                song_comment += f"Type: {str(song['type'])}\n"
             song_metadata['track_title'] = song['title']
             song_metadata['artist'] = str(join_artists(song['artists']))
 
@@ -824,11 +802,11 @@ def download_audio(song: dict, show_info: bool = True):
             stats['songs'] += 1
             if show_info:
                 log.info(f"Song downloaded successfully!")
-            return 'download_ok'
+            return 'ok_download'
         except Exception:
             log.error(f"Failed to add metadata to file: {out_file_ext_rel}!")
             log.debug(format_exc())
-            return 'metadata_fail'
+            return 'fail_metadata'
     else:
         log.info("Download skipped as specified by '--skip-download' argument!")
         stats['songs'] += 1
@@ -858,6 +836,8 @@ def download_album_with_songs(album_id: str):
         # For each track in album result
         for track in album_result['original_request']['tracks']:
             track_count += 1
+            if check_download_limit():
+                break
             if not ('videoId' in track and track['videoId']):
                 log.error("Failed to get data about album song " + str(track_count) + ": invalid or missing ID, song may be unavailable, skipping it...")
                 stats['errors'] += 1
@@ -874,7 +854,7 @@ def download_album_with_songs(album_id: str):
                     stats['errors'] += 1
                 song_2 = None
                 # If track in album is a music video, attempt to retrieve album version
-                if song['type'] == 'Video' and config['album_song_instead_of_video']:
+                if song['type'] == 'Video' and default_config['album_song_instead_of_video']:
                     song_2_id = get_album_song_instead_of_video(album_result, song)
                     if song_2_id:
                         log.info("Song ID: " + song['id'] + " is a video, found its audio counterpart ID: " + song_2_id)
@@ -883,17 +863,16 @@ def download_album_with_songs(album_id: str):
                         log.warning("Song ID: " + song['id'] + " is a video, failed to find its audio counterpart, using video version instead!")
                         stats['warnings'] += 1
 
-                elif song['type'] == 'Video' and not config['album_song_instead_of_video']:
+                elif song['type'] == 'Video' and not default_config['album_song_instead_of_video']:
                     log.info("Song ID: " + song_id + " is a video, but since 'album_song_instead_of_video' is set to false in config the video version will be used.")
 
                 if song_2:
                     song = song_2
 
                 log.info("Downloading album song " + str(track_count) + ": " + song['title'] + "...")
-                song_info = join_song_album(song, album_info)
-                print(song_info)
-                download_audio(song_info)
                 album['songs'].append(song)
+                # Add album info before downloading
+                download_audio(join_song_album(song, album_info))
                 continue
             except Exception:
                 log.error("Failed to download album song " + str(track_count) + ": " + song_id + " !")
@@ -910,7 +889,7 @@ def download_album_with_songs(album_id: str):
         return
 
 
-def download_playlist(playlist_id: str, limit: int = config['default_playlist_limit']):
+def download_playlist(playlist_id: str, limit: int = default_config['playlist_limit']):
     playlist = dict()
     playlist['id'] = playlist_id
     data_playlist = None
@@ -955,6 +934,8 @@ def download_playlist(playlist_id: str, limit: int = config['default_playlist_li
             if track_count > limit:
                 log.info("Playlist limit reached: " + str(limit) + "!")
                 break
+            if check_download_limit():
+                break
             if not('videoId' in track and track['videoId']):
                 log.error("Failed to get data about playlist song: invalid or missing ID, song may be unavailable, skipping it...")
                 stats['errors'] += 1
@@ -971,9 +952,9 @@ def download_playlist(playlist_id: str, limit: int = config['default_playlist_li
                     continue
                 song['playlist_index'] = track_count
                 log.debug("Downloading playlist song " + str(track_count) + ": " + song['title'] + " - " + join_artists(song['artists']) + "...")
-                # Adds playlist information to download audio
-                download_audio(join_song_playlist(song, playlist))
                 playlist['songs'].append(song)
+                # Add playlist information to download audio
+                download_audio(join_song_playlist(song, playlist))
                 track_successful += 1
             except Exception:
                 log.error("Failed to get data about song ID: " + song_id + ", skipping it...")
@@ -993,6 +974,106 @@ def download_playlist(playlist_id: str, limit: int = config['default_playlist_li
         return
 
 
+def parse_url(url: str):
+    url_props = dict()
+    url_props['original'] = url
+
+    # Check if string is a valid URL
+    if url.startswith('https://') or url.startswith('http://'):
+        url_props['is_url'] = True
+        parsed_url = urlparse(url)
+        if parsed_url.hostname.count('youtube.com') != 1:
+            log.error(f"Parse URL: Invalid URL Address: {url}!")
+            stats['errors'] += 1
+            return
+        parsed_qs = parse_qs(parsed_url.query)
+        if 'watch' in url and 'v' in parsed_qs:
+            # Watch URL for songs
+            url_props['id'] = url_props['song_id'] = parsed_qs['v'][0]
+        elif 'playlist' in url and 'list' in parsed_qs:
+            # Playlist URL for playlists
+            url_props['id'] = url_props['playlist_id'] = parsed_qs['list'][0]
+        elif 'browse' in url:
+            # Browse url is for album IDs (starting with 'MPREb_')
+            url_props['id'] = parsed_url.path.rsplit('/', 1)[-1]
+        else:
+            log.error(f"Parse URL: Invalid URL Address: {url}!")
+            stats['errors'] += 1
+            return
+    else:
+        # Assume given string is a plain ID
+        if any(char in url for char in " /\\'\"!@#$%^&*()`~+=[]{};:,.<>?"):
+            log.error(f"Parse URL: Invalid ID string: {url}!")
+            stats['errors'] += 1
+            return
+        url_props['is_url'] = False
+        url_props['id'] = url
+
+    if url_props['id'].startswith('PLLL'):
+        # ID represents a playlist
+        url_props['type'] = 'Playlist'
+    elif url_props['id'].startswith('OLAK5uy_'):
+        # ID represents an album playlist
+        # Get the album playlist ID for downloading
+        url_props['type'] = 'Album Playlist'
+        try:
+            album_id = ytm.get_album_browse_id(url_props['playlist_id'])
+            if album_id:
+                url_props['type'] = 'Album'
+                url_props['id'] = album_id
+        except Exception:
+            log.warning(f"Parse URL: Failed to get album browse ID for playlist ID: {url_props['id']}, using playlist ID instead")
+            log.debug(format_exc())
+            stats['warnings'] += 1
+    elif url_props['id'].startswith('MPREb_'):
+        # ID represents an album
+        url_props['type'] = 'Album'
+    else:
+        # ID represents a song
+        url_props['type'] = 'Song'
+    return url_props
+
+
+# Returns list of URLs from console
+def parse_from_stdin():
+    print("Type in URLs or IDs to download, separated by new lines.\nSubmit blank line to confirm.")
+    in_str = 'ignore'
+    in_lines = list()
+    while in_str:
+        in_str = input()
+        if in_str:
+            in_lines.append(in_str)
+    return in_lines
+
+
+# Returns list of URLs from file
+def parse_batch(batch_file: str):
+    log.debug(f"Loading batch file: {batch_file} ...")
+    batch_file_abs = combine_path_with_base(batch_file)
+    # Check if file exists and is valid
+    if not os.path.exists(batch_file_abs):
+        log.error(f"Batch file: {batch_file} does not exist!")
+        stats['errors'] += 1
+        return
+    if not os.path.isfile(batch_file_abs):
+        log.error(f"Batch file: {batch_file} is not a file!")
+        stats['errors'] += 1
+        return
+
+    batch_file_lines = None
+    try:
+        with open(batch_file_abs, 'r') as fin:
+            batch_file_lines = fin.readlines()
+    except Exception:
+        log.error(f"Failed to open batch file: {batch_file} !")
+        log.debug(format_exc())
+        stats['errors'] += 1
+        return
+
+    log.info(f"Batch file: {batch_file} loaded successfully!")
+    return batch_file_lines
+
+
 def main():
     print("YouTube Music Downloader")
     setup_logging()
@@ -1002,7 +1083,6 @@ def main():
         print("YouTube Music Downloader by RaduTek")
         print("https://github.com/RaduTek/YTMusicDL")
 
-    setup_stats()
     check_args()
 
     global ytm
@@ -1011,12 +1091,30 @@ def main():
     if args['archive']:
         load_archive()
 
-    # print(args)
     urls = list()
-    # Parse given URLs
-    for url in args['urls']:
-        urls.append(parse_url(url))
+    if args['batch']:
+        # Treat URL arguments as paths to batch files
+        for batch in args['urls']:
+            b_urls = parse_from_stdin() if batch == '-' else parse_batch(batch)
+            if b_urls and len(b_urls) > 0:
+                # Parse URLs from the batch file
+                for url in b_urls:
+                    parsed = parse_url(url)
+                    if parsed:
+                        urls.append(parsed)
+    else:
+        # Parse given URLs
+        for url in args['urls']:
+            parsed = parse_url(url)
+            if parsed:
+                urls.append(parsed)
+
+    # Start statistics timer after URLs have been entered
+    setup_stats()
+
     for url in urls:
+        if check_download_limit():
+            break
         if url['type'] == 'Song':
             download_song(url['id'])
         elif url['type'] == 'Playlist':
