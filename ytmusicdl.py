@@ -21,6 +21,8 @@ from urllib.parse import parse_qs
 
 # Configuration and declarations
 
+__version = '1.0'
+
 # Default configuration
 default_config = {
     'default_log_level': logging.INFO,
@@ -1075,7 +1077,7 @@ def parse_batch(batch_file: str):
 
 
 def main():
-    print("YouTube Music Downloader")
+    print(f"YouTube Music Downloader, version {__version}")
     setup_logging()
     setup_argparse()
 
