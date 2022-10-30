@@ -9,7 +9,10 @@ echo.
 pyinstaller > nul
 if %errorlevel%==9009 (
     echo pyinstaller is not installed!
-    pause
+    echo To install use: pip install pyinstaller
+    echo And ensure pyinstaller is available to PATH.
+    echo Press any key to exit...
+    pause > nul
     exit /b
 )
 cls
@@ -18,5 +21,6 @@ echo Building YTMusicDL for Windows...
 echo.
 pyinstaller --clean --icon "..\other\YTMusicDL_icon.ico" --onefile "..\ytmusicdl.py"
 
-pause
+echo Press any key to exit...
+pause > nul
 exit /b
