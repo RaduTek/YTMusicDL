@@ -1,4 +1,11 @@
-# YTMusicDL
+[//]: # (# YTMusicDL)
+
+<div align="center">
+
+![YTMusicDL](other/YTMusicDL.png)
+
+</div>
+
 Command line tool to download music from YT Music with appropriate metadata.
 
 **Note:** This tool is still in its infancy, expect bugs. Please report any issues encountered with this tool.
@@ -21,9 +28,10 @@ Prebuilt version is planned for the future (indefinite).
 
 ## Usage
 
-    usage: ytmusicdl.py [-h] [-f {opus,m4a,mp3}] [-q QUALITY] [-p BASE_PATH] [-o OUTPUT_TEMPLATE] [-a ARCHIVE] 
-                        [--write-json] [--write-cover] [--skip-existing] [--no-lyrics] [--skip-download] 
-                        [--playlist-limit PLAYLIST_LIMIT] [--log LOG] [-v] [--log-verbose] [--about]
+    usage: ytmusicdl.py [-h] [-f {opus,m4a,mp3}] [-q QUALITY] [-p BASE_PATH] [-o OUTPUT_TEMPLATE] [-a ARCHIVE] [-b] 
+                        [--write-json] [--cover-format {png,jpg}] [--write-cover] [--write-lyrics] [--no-lyrics] 
+                        [--skip-existing] [--skip-download] [--download-limit DOWNLOAD_LIMIT] 
+                        [--playlist-limit PLAYLIST_LIMIT] [-v] [--log LOG] [--log-verbose] [--about]
                         URL [URL ...]
     
     Downloads songs from YT Music with appropriate metadata
@@ -36,22 +44,29 @@ Prebuilt version is planned for the future (indefinite).
       -f {opus,m4a,mp3}, --format {opus,m4a,mp3}
                             Audio output format
       -q QUALITY, --quality QUALITY
-                            Audio quality: VBR (best: 0 - worst: 9) or CBR (e.g. 256k)
+                            Audio quality: VBR (best: 0 - worst: 9) or CBR (e.g. 256)
       -p BASE_PATH, --base-path BASE_PATH
                             Base output path (default is current working directory)
       -o OUTPUT_TEMPLATE, --output-template OUTPUT_TEMPLATE
                             Output template for downloaded songs
       -a ARCHIVE, --archive ARCHIVE
                             Path to file that keeps record of the downloaded songs
-      --write-json          Write JSON with information about song(s) (follows output template)
+      -b, --batch           Treat URL arguments as paths to files containing a list of URLs or IDs (one per line)
+                            Specify "-" for input to be taken from console (stdin)
+      --write-json          Write JSON with information about each song (follows output template)
+      --cover-format {png,jpg}
+                            Set the cover image format (png or jpg)
       --write-cover         Write each song's album cover to a file (follows output template)
-      --skip-existing       Skip over existing files
+      --write-lyrics        Write each song's lyrics to a file (follows output template)
       --no-lyrics           Don't obtain lyrics
+      --skip-existing       Skip over existing files
       --skip-download       Skip downloading songs
+      --download-limit DOWNLOAD_LIMIT
+                            Limit the number of songs to be downloaded in an instance
       --playlist-limit PLAYLIST_LIMIT
                             Limit the number of songs to be downloaded from a playlist
-      --log LOG             Path to verbose log output file
       -v, --verbose         Show all debug messages on console and log
+      --log LOG             Path to verbose log output file
       --log-verbose         Save all debug messages to the log
       --about               Display version information (must specify at least one (dummy) URL)
 
@@ -128,15 +143,24 @@ The file is written to after every song download.
 
 To enable, provide either an absolute path, or a path relative to the base path to the `-a` or `--archive` option.
 
+## Batch file
+
+If the `-b` or `--batch` option is provided, URL arguments will be treated as paths to files containing URLs or IDs to download, separated by new lines.
+
+If a relative path is provided, it will be taken as relative to the specified base path.
+
 ## Download options
 
-`--skip-download` will not download the audio, but will still perform other actions.<br>
+* `--skip-existing` will skip over existing files without overwriting
+* `--skip-download` will not download the audio, but will still perform other actions.<br>
 Notice: any processed song will still be added to the archive even when using `--skip-download`.
+* `--playlist-limit` limits the number of songs to be downloaded from **each** playlist.
+* `--download-limit` limits the number of songs to be downloaded in the current instance.
+* `--no-lyrics` will not get the lyrics for songs, this skips an API request and speeds up the download slightly.
+* `--write-json` and `--write-lyrics` will write out a JSON file containing song information (the contents of the `song: dict` from source code) and the song lyrics (if available) respectively.
+* `--write-cover` will write out the song cover art in the selected format.
+* `--cover-format` selects the cover format (`png` or `jpg`) to be embedded in metadata and to be writte out by `--write-cover`.
 
-`--no-lyrics` will not get the lyrics for songs, this skips an API request and speeds up the download slightly.
-
-`--write-json` and `--write-cover` will write out a JSON file containing song information (the contents of the `song: dict` from source code) and the cover art respectively.<br>
-The default cover art format is `PNG`.
 
 ## Example commands
 
