@@ -19,7 +19,7 @@ cls
 
 echo Building YTMusicDL for Windows...
 echo.
-pyinstaller --clean --icon "..\other\YTMusicDL_icon.ico" --onefile "..\ytmusicdl.py"
+pyinstaller --collect-all "ytmusicapi" --icon "..\other\YTMusicDL_icon.ico" --onefile "..\ytmusicdl.py"
 
 echo Press any key to exit...
 pause > nul
