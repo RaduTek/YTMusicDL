@@ -6,9 +6,8 @@
 /Music/
 /test/
 /Test/
-/setup/ytmusicdl.spec
-/setup/build/
-/setup/dist/
+/build/
+/dist/
 archive.txt
 log.txt
 batch.txt
