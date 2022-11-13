@@ -21,7 +21,7 @@ from urllib.parse import parse_qs
 
 # Configuration and declarations
 
-__version = '1.0'
+__version = '1.0 r2'
 
 # Default configuration
 default_config = {
@@ -164,16 +164,24 @@ def finish_stats():
     stats['duration'] = stats['end_time'] - stats['start_time']
     log_msg = "Processed: "
     if stats['playlists'] > 0:
-        log_msg += str(stats['playlists']) + " playlist" + ("s" if stats['playlists'] > 1 else "") + ", "
+        log_msg += str(stats['playlists']) + " playlist" + ("s" if stats['playlists'] != 1 else "") + ", "
     if stats['albums'] > 0:
-        log_msg += str(stats['albums']) + " album" + ("s" if stats['albums'] > 1 else "") + ", "
-    log_msg += str(stats['songs']) + " song" + ("s" if stats['songs'] > 1 else "") + " in "
+        log_msg += str(stats['albums']) + " album" + ("s" if stats['albums'] != 1 else "") + ", "
+    log_msg += str(stats['songs']) + " song" + ("s" if stats['songs'] != 1 else "") + " in "
     secs = stats['duration'].total_seconds()
     if secs > 59:
         mins = math.floor(secs / 60)
-        log_msg += str(mins) + " minute" + ("s" if mins > 1 else "") + " and "
+        log_msg += str(mins) + " minute" + ("s" if mins != 1 else "") + " and "
         secs -= mins * 60
-    log_msg += str(math.floor(secs)) + " second" + ("s" if secs > 1 else "")
+    log_msg += str(math.floor(secs)) + " second" + ("s" if secs != 1 else "")
+    if stats['errors'] > 0 or stats['warnings'] > 0:
+        log_msg += " with "
+    if stats['errors'] > 0:
+        log_msg += str(stats['errors']) + " error" + ("" if stats['errors'] == 1 else "s")
+        if stats['warnings'] > 0:
+            log_msg += " and "
+    if stats['warnings'] > 0:
+        log_msg += str(stats['warnings']) + " warning" + ("" if stats['warnings'] == 1 else "s")
     log.info(log_msg)
 
 
@@ -203,7 +211,7 @@ def check_args():
 
     # Set up logging to file
     if args['log']:
-        log_handler = logging.FileHandler(combine_path_with_base(args['log']))
+        log_handler = logging.FileHandler(combine_path_with_base(args['log']), encoding='utf-8')
         if args['verbose'] or args['log_verbose']:
             log_handler.setLevel(logging.DEBUG)
         log_formatter = logging.Formatter('[%(asctime)s :: %(levelname)s :: %(filename)s :: %(funcName)s]:\n%(message)s\n')
@@ -317,7 +325,7 @@ def parse_output_template(templ_str: str, extension: str, song: dict):
     # Extension shall not be sanitized
     templ_values['ext'] = extension
 
-    log.debug("Output template values: " + str(templ_values))
+    # log.debug("Output template values: " + str(templ_values))
 
     # Parse the string manually
     # We assume the template is correct, as it has been checked previously
@@ -451,46 +459,25 @@ def join_song_playlist(song: dict, playlist: dict):
     return song_info
 
 
-def get_album_song_instead_of_video(album: dict, song: dict):
-    # Get song ID of music video (that lurks in album result because YT Music >:( )
-    # This isn't required for premium accounts with song only mode enabled
-    search_query = str(song['title']) + " " + str(album['album']['title']) + " " + str(song['artists'][0]['name'])
-
-    search_results = None
-    try:
-        log.debug("Getting search results for: \"" + search_query + "\"...")
-        search_results = ytm.search(search_query, filter='songs', ignore_spelling=True)
-    except Exception:
-        log.error("API Error: failed to get search results for query: " + search_query + ".")
-        log.debug(format_exc())
-        stats['errors'] += 1
-        return
-
-    if search_results:
-        for search_result in search_results:
-            if 'album' in search_result and search_result['album']['id'] == album['album']['id'] \
-                    and 'videoId' in search_result and search_result['videoId']:
-                song_id = search_result['videoId']
-                log.debug("Found song ID: " + str(song_id) + "!")
-                return song_id
-
-    # Use the YouTube album playlist to get the song ID
-    # This is the last resort
-    if 'original_request' in album and 'audioPlaylistId' in album['original_request']:
-        audio_playlist_id = album['original_request']['audioPlaylistId']
-        log.debug("Loading album playlist from YT: " + str(audio_playlist_id) + "...")
-        album_playlist_url = "https://youtube.com/playlist?list=" + str(audio_playlist_id)
-        ytdl_config = {'extract_flat': True, 'quiet': True}
-        with YoutubeDL(ytdl_config) as ytdl:
-            album_playlist = ytdl.extract_info(album_playlist_url, download=False)
-            if len(album_playlist['entries']) > 0:
-                song_id = album_playlist['entries'][song['index'] - 1]['id']
-                if song_id is str:
-                    log.debug("Found song ID: " + song_id + "!")
-                    return song_id
-
-    log.debug("Didn't find song version of music video!")
-    return
+def load_album_yt_playlist(album_playlist_id: str):
+    album_yt_playlist = dict()
+    log.debug("Loading album playlist from YT: " + str(album_playlist_id) + "...")
+    album_playlist_url = "https://youtube.com/playlist?list=" + str(album_playlist_id)
+    ytdl_config = {'extract_flat': True, 'quiet': True}
+    with YoutubeDL(ytdl_config) as ytdl:
+        album_playlist = ytdl.extract_info(album_playlist_url, download=False)
+        if 'entries' in album_playlist:
+            index = 0
+            for entry in album_playlist['entries']:
+                index += 1
+                if entry['id']:
+                    album_yt_playlist['track' + str(index)] = {
+                        'index': index,
+                        'id': entry['id'],
+                        'title': entry['title']
+                    }
+    # log.debug(json.dumps(album_yt_playlist))
+    return album_yt_playlist if len(album_yt_playlist) > 0 else None
 
 
 def get_album(album_id: str, return_original_request: bool = False):
@@ -824,16 +811,18 @@ def download_song(song_id: str, show_info: bool = True):
 
 def download_album_with_songs(album_id: str):
     # Get album with songs
-    log.debug("Getting album ID: " + album_id + " and its songs...")
+    log.debug(f"Getting album ID: {album_id} and its songs...")
     album_result = get_album(album_id, True)
     if not album_result:
         return
+
+    album_yt_playlist = None
 
     try:
         album_info = album_result['album'].copy()
         album = album_result['album'].copy()
         album['songs'] = list()
-        log.info("Album title: " + album['title'] + ", artists: " + str(join_artists(album['artists'])))
+        log.info(f"Album title: {album['title']}, artists: {str(join_artists(album['artists']))}")
         track_count = 0
         # For each track in album result
         for track in album_result['original_request']['tracks']:
@@ -841,7 +830,7 @@ def download_album_with_songs(album_id: str):
             if check_download_limit():
                 break
             if not ('videoId' in track and track['videoId']):
-                log.error("Failed to get data about album song " + str(track_count) + ": invalid or missing ID, song may be unavailable, skipping it...")
+                log.error(f"Failed to get data about album song {str(track_count)}: invalid or missing ID, song may be unavailable, skipping it...")
                 stats['errors'] += 1
                 continue
             song_id = str(track['videoId'])
@@ -849,32 +838,53 @@ def download_album_with_songs(album_id: str):
                 if in_archive(song_id):
                     continue
                 # Try to get song info
-                log.debug("Getting song ID: " + song_id + "...")
+                log.debug(f"Getting song ID: {song_id}...")
                 song = get_song(song_id, get_album_info=False, track_index=track_count, show_info=False)
                 if not song:
-                    log.error("Failed to get data about song ID: " + song_id + ", skipping it...")
+                    log.error(f"Failed to get data about song ID: {song_id}, skipping it...")
                     stats['errors'] += 1
+                song_to_dl = song
                 song_2 = None
                 # If track in album is a music video, attempt to retrieve album version
                 if song['type'] == 'Video' and default_config['album_song_instead_of_video']:
-                    song_2_id = get_album_song_instead_of_video(album_result, song)
-                    if song_2_id:
-                        log.info("Song ID: " + song['id'] + " is a video, found its audio counterpart ID: " + song_2_id)
-                        song_2 = get_song(song_2_id, get_album_info=False, track_index=track_count, show_info=False)
-                    else:
+                    # Loading YT playlist:
+                    if not album_yt_playlist:
+                        album_playlist_id = album_result['original_request']['audioPlaylistId']
+                        album_yt_playlist = load_album_yt_playlist(album_playlist_id)
+                    # Get audio counterpart ID from YT playlist
+                    if album_yt_playlist:
+                        track_key = 'track' + str(track_count)
+                        if track_key in album_yt_playlist:
+                            song_2_id = album_yt_playlist[track_key]['id']
+                            log.info(f"Song ID: {song_id} is a video, found its audio counterpart ID: {song_2_id}")
+                            song_2 = get_song(song_2_id, get_album_info=False, track_index=track_count, show_info=False)
+                        else:
+                            log.debug(f"Track key: {track_key} not found in YT playlist!")
+                    if not song_2:
                         log.warning("Song ID: " + song['id'] + " is a video, failed to find its audio counterpart, using video version instead!")
                         stats['warnings'] += 1
-
                 elif song['type'] == 'Video' and not default_config['album_song_instead_of_video']:
                     log.info("Song ID: " + song_id + " is a video, but since 'album_song_instead_of_video' is set to false in config the video version will be used.")
 
-                if song_2:
-                    song = song_2
+                song_title = song_2['title'] if song_2 else song['title']
+                log.info(f"Downloading album song {str(track_count)}: {song_title}...")
 
-                log.info("Downloading album song " + str(track_count) + ": " + song['title'] + "...")
-                album['songs'].append(song)
-                # Add album info before downloading
-                download_audio(join_song_album(song, album_info))
+                download_ok = False
+                if song_2:
+                    # Download found audio counterpart
+                    log.debug("Trying to download audio counterpart song...")
+                    result = download_audio(join_song_album(song_2, album_info))
+                    if result.startswith('fail'):
+                        log.warning("Failed to download audio counterpart, reverting to video version!")
+                    else:
+                        download_ok = True
+                        album['songs'].append(song_2)
+
+                if not download_ok:
+                    # Download song with ID from album
+                    download_audio(join_song_album(song, album_info))
+                    album['songs'].append(song)
+
                 continue
             except Exception:
                 log.error("Failed to download album song " + str(track_count) + ": " + song_id + " !")
