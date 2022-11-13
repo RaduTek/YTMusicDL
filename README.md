@@ -20,10 +20,12 @@ Get the latest `ytmusicdl.exe` from the Releases tab. It's almost ready to use, 
 
 ### Prerequisites:
 
-* **Python** 3.7+ [(Official Website)](https://www.python.org/downloads/)
+* **Python** 3.8 - 3.10 [(Official Website)](https://www.python.org/downloads/) (Version 3.11 won't work for now, see note under `yt_dlp`)
 * `ytmusicapi` [(GitHub)](https://github.com/sigma67/ytmusicapi) [(Documentation)](https://ytmusicapi.readthedocs.io/en/latest/index.html) (install using `pip`)
 * `music_tag` [(GitHub)](https://github.com/KristoforMaynard/music-tag) [(PyPI)](https://pypi.org/project/music-tag/) (install using `pip`)
 * `yt_dlp` [(GitHub)](https://github.com/yt-dlp/yt-dlp/) (install using `pip`)
+  * **Note**: `yt_dlp` has as one of it's requirements: [brotli](https://pypi.org/project/Brotli/), which is not available for Python 3.11. <br>
+You can install [brotlicffi](brotlicffi) and all it's other requirements manually, then install `yt_dlp` with the `--no-dependencies` switch.
 * `FFMPEG` (required by `yt_dlp`) 
   * **For Windows**: must be added to `%PATH%` [(Recommended: yt_dlp provided builds - GitHub)](https://github.com/yt-dlp/FFmpeg-Builds)
   * **For Linux**: Install from your package manager
