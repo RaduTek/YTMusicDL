@@ -21,6 +21,7 @@ Get the latest `ytmusicdl.exe` from the Releases tab. It's almost ready to use, 
 ### Prerequisites:
 
 * **Python** 3.8 - 3.10 [(Official Website)](https://www.python.org/downloads/) (Version 3.11 won't work for now, see note under `yt_dlp`)
+* `pillow` [(Official Website)](https://python-pillow.org/) [(PyPI)](https://pypi.org/project/Pillow/)
 * `ytmusicapi` [(GitHub)](https://github.com/sigma67/ytmusicapi) [(Documentation)](https://ytmusicapi.readthedocs.io/en/latest/index.html) (install using `pip`)
 * `music_tag` [(GitHub)](https://github.com/KristoforMaynard/music-tag) [(PyPI)](https://pypi.org/project/music-tag/) (install using `pip`)
 * `yt_dlp` [(GitHub)](https://github.com/yt-dlp/yt-dlp/) (install using `pip`)
