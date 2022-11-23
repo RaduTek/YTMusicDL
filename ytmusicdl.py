@@ -21,7 +21,7 @@ from urllib.parse import parse_qs
 
 # Configuration and declarations
 
-__version = '1.0 r2'
+__version = '1.1'
 
 # Default configuration
 default_config = {
