@@ -1100,7 +1100,7 @@ def parse_batch(batch_file: str):
 
 def parse_special_account(key: str):
     urls = []
-    if not args['account']:
+    if not args['account_headers']:
         return
     if key == 'library_playlists':
         try:
@@ -1160,8 +1160,8 @@ def main():
     global ytm
 
     # Open account headers
-    if args['account']:
-        account_headers_path = combine_path_with_base(args['account'])
+    if args['account_headers']:
+        account_headers_path = combine_path_with_base(args['account_headers'])
         if os.path.isfile(account_headers_path):
             ytm = YTMusic(auth=account_headers_path)
 
@@ -1201,7 +1201,7 @@ def main():
 
     # Recreate YTM object to not make more API calls on user ID
     # Just in case it may cause issues
-    if args['account']:
+    if args['account_headers']:
         ytm = YTMusic()
 
     for url in urls:
