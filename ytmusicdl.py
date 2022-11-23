@@ -121,8 +121,8 @@ def setup_argparse():
     parser.add_argument('-a', '--archive', type=str, help="Path to file that keeps record of the downloaded songs")
     parser.add_argument('-b', '--batch', action='store_true', help="R|Treat URL arguments as paths to files containing a list of URLs or IDs (one per line)" +
                                                                    "\nSpecify \"-\" for input to be taken from console (stdin)")
-    parser.add_argument('--account', type=str, help="R|Path to file containing authentication headers" +
-                                                    "\nAllows special URL values to be used.")
+    parser.add_argument('--account-headers', type=str, help="R|Path to file containing authentication headers" +
+                                                    "\nAllows special URL placeholder values to be used.")
     parser.add_argument('--write-json', action='store_true',
                         help="Write JSON with information about each song (follows output template)")
     parser.add_argument('--cover-format', type=str.lower, choices=cover_formats, default=default_config['cover_format'],
