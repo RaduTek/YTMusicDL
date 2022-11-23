@@ -32,6 +32,9 @@ default_config = {
     'format': 'opus',
     'quality': '0',  # Maximum/optimized quality
     'output_template': '{song_title} - {song_artist} [{song_id}].{ext}',
+    'library_limit': 250,  # Limit for results from account specific requests
+    'library_order': 'a_to_z',  # 'a_to_z', 'z_to_a' or 'recently_added'
+    'library_songs_limit': 5000,  # Limit for get_library_songs request
     'playlist_limit': 5000,  # Default is YT's limit for playlist length
     'download_limit': 0,  # 0 means no limit
     'file_sanitize_replace_chr': '_',
@@ -908,7 +911,11 @@ def download_playlist(playlist_id: str, limit: int = default_config['playlist_li
     playlist['id'] = playlist_id
     data_playlist = None
     try:
-        data_playlist = ytm.get_playlist(playlist_id, limit=limit)
+        if playlist_id == "LM":
+            # Get liked songs playlist
+            data_playlist = ytm.get_liked_songs(limit=limit)
+        else:
+            data_playlist = ytm.get_playlist(playlist_id, limit=limit)
     except Exception:
         log.error("Get Playlist: API request failed for playlist ID: " + playlist_id)
         log.debug(format_exc())
@@ -920,13 +927,16 @@ def download_playlist(playlist_id: str, limit: int = default_config['playlist_li
 
     try:
         playlist['title'] = str(data_playlist['title'])
-        playlist['authors'] = list()
-        if data_playlist['author'] is dict:
-            playlist['authors'].append(str(data_playlist['author']))
-        elif data_playlist['author'] is list:
-            playlist['authors'] = str(data_playlist['author'])
-        playlist['year'] = data_playlist['year']
-        playlist['duration'] = str(data_playlist['duration'])
+        if 'author' in data_playlist:
+            playlist['authors'] = list()
+            if data_playlist['author'] is dict:
+                playlist['authors'].append(str(data_playlist['author']))
+            elif data_playlist['author'] is list:
+                playlist['authors'] = str(data_playlist['author'])
+        if 'year' in data_playlist:
+            playlist['year'] = data_playlist['year']
+        if 'duration' in data_playlist:
+            playlist['duration'] = str(data_playlist['duration'])
         playlist['total'] = data_playlist['trackCount']
         playlist['visibility'] = str(data_playlist['privacy'])
         if 'description' in data_playlist and data_playlist['description']:
@@ -1023,7 +1033,7 @@ def parse_url(url: str):
         url_props['is_url'] = False
         url_props['id'] = url
 
-    if url_props['id'].startswith('PLLL'):
+    if url_props['id'].startswith('PLLL') or url_props['id'] == "LM":
         # ID represents a playlist
         url_props['type'] = 'Playlist'
     elif url_props['id'].startswith('OLAK5uy_'):
@@ -1088,6 +1098,54 @@ def parse_batch(batch_file: str):
     return batch_file_lines
 
 
+def parse_special_account(key: str):
+    urls = []
+    if not args['account']:
+        return
+    if key == 'library_playlists':
+        try:
+            limit = default_config['library_limit']
+            if args['download_limit'] != default_config['download_limit']:
+                limit = args['download_limit']
+            library_playlists = ytm.get_library_playlists(limit=limit)
+            for playlist in library_playlists:
+                if 'playlistId' in playlist and playlist['playlistId'] != "LM":
+                    urls.append(playlist['playlistId'])
+        except Exception:
+            log.warning(f"Failed to get playlists from account library!")
+            log.debug(format_exc())
+            stats['errors'] += 1
+    elif key == 'library_albums':
+        try:
+            library_albums = ytm.get_library_albums(limit=default_config['library_limit'], order=default_config['library_order'])
+            for album in library_albums:
+                if 'browseId' in album:
+                    urls.append(album['browseId'])
+        except Exception:
+            log.warning(f"Failed to get playlists from account library!")
+            log.debug(format_exc())
+            stats['errors'] += 1
+    elif key == 'library_songs':
+        try:
+            limit = default_config['library_songs_limit']
+            if args['download_limit'] != default_config['download_limit']:
+                limit = args['download_limit']
+            library_songs = ytm.get_library_songs(limit=limit, order=default_config['library_order'])
+            for song in library_songs:
+                if 'videoId' in song and ('isAvailable' in song or song['isAvailable']):
+                    urls.append(song['videoId'])
+        except Exception:
+            log.warning(f"Failed to get playlists from account library!")
+            log.debug(format_exc())
+            stats['errors'] += 1
+    elif key == 'liked_songs':
+        urls.append("LM")
+
+    if len(urls) == 0:
+        return
+    return urls
+
+
 def main():
     print(f"YouTube Music Downloader, version {__version}")
     setup_logging()
@@ -1127,12 +1185,24 @@ def main():
     else:
         # Parse given URLs
         for url in args['urls']:
-            parsed = parse_url(url)
-            if parsed:
-                urls.append(parsed)
+            parsed_special = parse_special_account(url)
+            if parsed_special:
+                for url2 in parsed_special:
+                    parsed = parse_url(url2)
+                    if parsed:
+                        urls.append(parsed)
+            else:
+                parsed = parse_url(url)
+                if parsed:
+                    urls.append(parsed)
 
     # Start statistics timer after URLs have been entered
     setup_stats()
+
+    # Recreate YTM object to not make more API calls on user ID
+    # Just in case it may cause issues
+    if args['account']:
+        ytm = YTMusic()
 
     for url in urls:
         if check_download_limit():
