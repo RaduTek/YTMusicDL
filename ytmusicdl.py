@@ -809,6 +809,8 @@ def download_audio(song: dict, show_info: bool = True):
 
 
 def download_song(song_id: str, show_info: bool = True):
+    if in_archive(song_id):
+        return
     song = get_song(song_id, show_info=False)
     if song:
         download_audio(song, show_info=show_info)
