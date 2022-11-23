@@ -33,7 +33,7 @@ default_config = {
     'quality': '0',  # Maximum/optimized quality
     'output_template': '{song_title} - {song_artist} [{song_id}].{ext}',
     'library_limit': 250,  # Limit for results from account specific requests
-    'library_order': 'a_to_z',  # 'a_to_z', 'z_to_a' or 'recently_added'
+    'library_order': 'recently_added',  # 'a_to_z', 'z_to_a' or 'recently_added'
     'library_songs_limit': 5000,  # Limit for get_library_songs request
     'playlist_limit': 5000,  # Default is YT's limit for playlist length
     'download_limit': 0,  # 0 means no limit
