@@ -33,12 +33,10 @@ You can install [brotlicffi](brotlicffi) and all it's other requirements manuall
 
 ## Usage
 
-    usage: ytmusicdl.py [-h] [-f {opus,m4a,mp3}] [-q QUALITY] [-p BASE_PATH] [-o OUTPUT_TEMPLATE] [-a ARCHIVE] [-b] 
-                        [--write-json] [--cover-format {png,jpg}] [--write-cover] [--write-lyrics] [--no-lyrics] 
-                        [--skip-existing] [--skip-download] [--download-limit DOWNLOAD_LIMIT] 
-                        [--playlist-limit PLAYLIST_LIMIT] [-v] [--log LOG] [--log-verbose] [--about]
-                        URL [URL ...]
-    
+    usage: ytmusicdl.py [-h] [-f {opus,m4a,mp3}] [-q QUALITY] [-p BASE_PATH] [-o OUTPUT_TEMPLATE] [-a ARCHIVE] [-b] [--account ACCOUNT] [--write-json] [--cover-format {png,jpg}] [--write-cover] [--write-lyrics] [--no-lyrics]
+                    [--skip-existing] [--skip-download] [--download-limit DOWNLOAD_LIMIT] [--playlist-limit PLAYLIST_LIMIT] [-v] [--log LOG] [--log-verbose] [--about]
+                    URL [URL ...]
+
     Downloads songs from YT Music with appropriate metadata
     
     positional arguments:
@@ -58,6 +56,9 @@ You can install [brotlicffi](brotlicffi) and all it's other requirements manuall
                             Path to file that keeps record of the downloaded songs
       -b, --batch           Treat URL arguments as paths to files containing a list of URLs or IDs (one per line)
                             Specify "-" for input to be taken from console (stdin)
+      --account-headers ACCOUNT_HEADERS
+                            Path to file containing authentication headers
+                            Allows special URL placeholder values to be used.
       --write-json          Write JSON with information about each song (follows output template)
       --cover-format {png,jpg}
                             Set the cover image format (png or jpg)
@@ -153,6 +154,17 @@ To enable, provide either an absolute path, or a path relative to the base path 
 If the `-b` or `--batch` option is provided, URL arguments will be treated as paths to files containing URLs or IDs to download, separated by new lines.
 
 If a relative path is provided, it will be taken as relative to the specified base path.
+
+## Account options
+
+Follow the instructions on [ytmusicapi documentation](https://ytmusicapi.readthedocs.io/en/latest/setup.html#authenticated-requests) to get your account headers ready for use with `ytmusicdl.py`.
+
+Specify your JSON file containing account header data using the `--account-headers` argument. This lets you use special placeholder IDs to download songs from your library:
+* `library_songs` - Download songs from the Songs tab on the Library page
+* `library_albums` - Download each album on the Albums tab on the Library page
+* `library_playlists` - Download each playlist on the Playlists tab on the Library page
+* `liked_songs` - Download your liked songs playlist
+
 
 ## Download options
 
