@@ -77,7 +77,7 @@ artist_schema = {
 }
 
 # Declare objects
-ytm: YTMusic
+ytm = None
 parser: argparse.ArgumentParser
 args: dict
 log: logging.Logger
