@@ -163,6 +163,8 @@ Specify your JSON file containing account header data using the `--account-heade
 * `library_playlists` - Download each playlist on the Playlists tab on the Library page
 * `liked_songs` - Download your liked songs playlist
 
+Most of the time you will be using `library_songs` as it includes liked songs and all available songs from albums added to your library.
+
 
 ## Download options
 
