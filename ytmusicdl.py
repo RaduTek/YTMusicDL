@@ -43,7 +43,8 @@ default_config = {
     'date_format': '%d-%m-%Y',
     'time_format': '%H-%M-%S',
     'datetime_format': '%d-%m-%Y %H-%M-%S',
-    'unknown_placeholder': "Unknown"
+    'unknown_placeholder': "Unknown",
+    'skip_already_archive_message': False
 }
 
 formats_ext = ['opus', 'm4a', 'mp3']
@@ -136,6 +137,8 @@ def setup_argparse():
     parser.add_argument('--skip-download', action='store_true', help="Skip downloading songs")
     parser.add_argument('--download-limit', type=int, default=default_config['download_limit'], help="Limit the number of songs to be downloaded in an instance")
     parser.add_argument('--playlist-limit', type=int, default=default_config['playlist_limit'], help="Limit the number of songs to be downloaded from a playlist")
+    parser.add_argument('--skip-already-archive-message', action='store_true', default=default_config['skip_already_archive_message'],
+                        help="Disables the \"Song is already in archive, skipping it...\" message")
     parser.add_argument('-v', '--verbose', action='store_true', help="Show all debug messages on console and log")
     parser.add_argument('--log', type=str, help="Path to verbose log output file")
     parser.add_argument('--log-verbose', action='store_true', help="Save all debug messages to the log")
@@ -401,7 +404,7 @@ def load_archive():
 def in_archive(song_id: str, show_message: bool = True):
     global archive
     if args['archive'] and song_id in archive:
-        if show_message:
+        if show_message and not args['skip_already_archive_message']:
             log.info("Song ID: " + song_id + " is already in archive, skipping it.")
         return True
     return False
