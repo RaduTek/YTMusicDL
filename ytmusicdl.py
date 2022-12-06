@@ -972,6 +972,7 @@ def download_playlist(playlist_id: str, limit: int = default_config['playlist_li
             song_id = str(track['videoId'])
             try:
                 if in_archive(song_id):
+                    track_successful += 1
                     continue
                 log.debug("Getting song ID: " + song_id + "...")
                 song = get_song(song_id, show_info=False)
@@ -983,8 +984,9 @@ def download_playlist(playlist_id: str, limit: int = default_config['playlist_li
                 log.debug("Downloading playlist song " + str(track_count) + ": " + song['title'] + " - " + join_artists(song['artists']) + "...")
                 playlist['songs'].append(song)
                 # Add playlist information to download audio
-                download_audio(join_song_playlist(song, playlist))
-                track_successful += 1
+                result = download_audio(join_song_playlist(song, playlist))
+                if result.startswith('ok') or result.startswith('skip'):
+                    track_successful += 1
             except Exception:
                 log.error("Failed to get data about song ID: " + song_id + ", skipping it...")
                 log.debug(format_exc())
