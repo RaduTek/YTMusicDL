@@ -1111,6 +1111,7 @@ def parse_special_account(key: str):
         return
     if key == 'library_playlists':
         try:
+            log.info("Loading playlists from account library...")
             limit = default_config['library_limit']
             if args['download_limit'] != default_config['download_limit']:
                 limit = args['download_limit']
@@ -1124,6 +1125,7 @@ def parse_special_account(key: str):
             stats['errors'] += 1
     elif key == 'library_albums':
         try:
+            log.info("Loading albums from account library...")
             library_albums = ytm.get_library_albums(limit=default_config['library_limit'], order=default_config['library_order'])
             for album in library_albums:
                 if 'browseId' in album:
@@ -1134,6 +1136,7 @@ def parse_special_account(key: str):
             stats['errors'] += 1
     elif key == 'library_songs':
         try:
+            log.info("Loading songs from account library...")
             limit = default_config['library_songs_limit']
             if args['download_limit'] != default_config['download_limit']:
                 limit = args['download_limit']
