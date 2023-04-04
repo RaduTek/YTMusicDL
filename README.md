@@ -21,11 +21,11 @@ I will no longer be maintaining the Windows binary. The `build.cmd` file will st
 ### Prerequisites:
 
 - **Python** 3.8+ [(Official Website)](https://www.python.org/downloads/)
-- `pillow` [(Official Website)](https://python-pillow.org/) [(PyPI)](https://pypi.org/project/Pillow/)
-- `ytmusicapi` [(GitHub)](https://github.com/sigma67/ytmusicapi) [(Documentation)](https://ytmusicapi.readthedocs.io/en/latest/index.html) (install using `pip`)
+- `pillow` [(Official Website)](https://python-pillow.org/) [(PyPI)](https://pypi.org/project/Pillow/) (install using `pip`)
+- `ytmusicapi` [(GitHub)](https://github.com/sigma67/ytmusicapi) [(Documentation)](https://ytmusicapi.readthedocs.io/en/latest/index.html) [(PyPI)](https://pypi.org/project/ytmusicapi/) (install using `pip`)
 - `music_tag` [(GitHub)](https://github.com/KristoforMaynard/music-tag) [(PyPI)](https://pypi.org/project/music-tag/) (install using `pip`)
-- `yt_dlp` [(GitHub)](https://github.com/yt-dlp/yt-dlp/) (install using `pip`)
-- `FFMPEG` (required by `yt_dlp`)
+- `yt-dlp` [(GitHub)](https://github.com/yt-dlp/yt-dlp/) [(PyPI)](https://pypi.org/project/yt-dlp/) (install using `pip`)
+- `FFMPEG` (required by `yt-dlp`)
   - **For Windows**: must be added to `%PATH%` [(Recommended: yt_dlp provided builds - GitHub)](https://github.com/yt-dlp/FFmpeg-Builds)
   - **For Linux**: Install from your package manager
 
