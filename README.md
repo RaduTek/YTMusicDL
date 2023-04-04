@@ -1,4 +1,4 @@
-[//]: # (# YTMusicDL)
+[//]: # "# YTMusicDL"
 
 <div align="center">
 
@@ -16,18 +16,18 @@ Command line tool to download music from YT Music with appropriate metadata.
 
 ### Windows binary
 
-Get the latest `ytmusicdl.exe` from the Releases tab. It's almost ready to use, you just need FFMPEG, either in the same directory as `ytmusicdl` or in a folder added to `%PATH%`.
+I will no longer be maintaining the Windows binary. The `build.cmd` file will still be included, but you'll have to install some other prerequisites for that to work.
 
 ### Prerequisites:
 
-* **Python** 3.8+ [(Official Website)](https://www.python.org/downloads/)
-* `pillow` [(Official Website)](https://python-pillow.org/) [(PyPI)](https://pypi.org/project/Pillow/)
-* `ytmusicapi` [(GitHub)](https://github.com/sigma67/ytmusicapi) [(Documentation)](https://ytmusicapi.readthedocs.io/en/latest/index.html) (install using `pip`)
-* `music_tag` [(GitHub)](https://github.com/KristoforMaynard/music-tag) [(PyPI)](https://pypi.org/project/music-tag/) (install using `pip`)
-* `yt_dlp` [(GitHub)](https://github.com/yt-dlp/yt-dlp/) (install using `pip`)
-* `FFMPEG` (required by `yt_dlp`) 
-  * **For Windows**: must be added to `%PATH%` [(Recommended: yt_dlp provided builds - GitHub)](https://github.com/yt-dlp/FFmpeg-Builds)
-  * **For Linux**: Install from your package manager
+- **Python** 3.8+ [(Official Website)](https://www.python.org/downloads/)
+- `pillow` [(Official Website)](https://python-pillow.org/) [(PyPI)](https://pypi.org/project/Pillow/)
+- `ytmusicapi` [(GitHub)](https://github.com/sigma67/ytmusicapi) [(Documentation)](https://ytmusicapi.readthedocs.io/en/latest/index.html) (install using `pip`)
+- `music_tag` [(GitHub)](https://github.com/KristoforMaynard/music-tag) [(PyPI)](https://pypi.org/project/music-tag/) (install using `pip`)
+- `yt_dlp` [(GitHub)](https://github.com/yt-dlp/yt-dlp/) (install using `pip`)
+- `FFMPEG` (required by `yt_dlp`)
+  - **For Windows**: must be added to `%PATH%` [(Recommended: yt_dlp provided builds - GitHub)](https://github.com/yt-dlp/FFmpeg-Builds)
+  - **For Linux**: Install from your package manager
 
 ## Usage
 
@@ -36,10 +36,10 @@ Get the latest `ytmusicdl.exe` from the Releases tab. It's almost ready to use, 
                     URL [URL ...]
 
     Downloads songs from YT Music with appropriate metadata
-    
+
     positional arguments:
       URL                   List of URL(s) to download
-    
+
     options:
       -h, --help            show this help message and exit
       -f {opus,m4a,mp3}, --format {opus,m4a,mp3}
@@ -95,7 +95,7 @@ If not specified, the base path defaults to the current working directory of the
 
 ## Output Template
 
-The `-o` or `--output` option is used to indicate a template for the output file names, relative to the base path. The audio download, `--write-json` and `--write-cover` all follow the output template. 
+The `-o` or `--output` option is used to indicate a template for the output file names, relative to the base path. The audio download, `--write-json` and `--write-cover` all follow the output template.
 
 The template usually contains special sequences that are replaced with values for each download. <br>
 The sequence is `{value_name}` and it can be combined with other characters, for example: `{song_title} - {song_artist} [{song_id}].{ext}` - this is the default output template.
@@ -116,29 +116,29 @@ Notice: The output template must end in `.{ext}`, as hard-coding a file extensio
 
 ### Available values for template
 
-* Song related
-  * `song_id`, `song_title`, `song_duration`, `song_year`
-  * `song_type` - `Song` or `Video`
-  * `song_artist` - first song artist
-  * `song_artists` - all song artists, separated by `,&nbsp;`
-* Album related
-  * `song_index` - song's index in an album
-  * `album_total` - total number of songs in an album
-  * `album_id`, `album_title`
-  * `album_type` - `Album` or `Single`, as seen on YT Music album page
-  * `album_duration`
-  * `album_artist` - first album artist
-  * `album_artists` - all album artists, separated by `,&nbsp;`
-* **Playlist related**
-  * `song_playlist_index` - song's index in a playlist
-  * `playlist_total` - total number of songs in a playlist
-  * `playlist_id`, `playlist_title`
-  * `playlist_author` - first playlist author
-  * `playlist_authors` - all playlist authors (collaborators), separated by `,&nbsp;`
-  * `playlist_visibility` - `Public`, `Unlisted` or `Private`
-* **Other**
-  * `date`, `time`, `date_time` - date and/or approximate time of download
-  * `ext` - **can only be used at the end of the template**
+- Song related
+  - `song_id`, `song_title`, `song_duration`, `song_year`
+  - `song_type` - `Song` or `Video`
+  - `song_artist` - first song artist
+  - `song_artists` - all song artists, separated by `,&nbsp;`
+- Album related
+  - `song_index` - song's index in an album
+  - `album_total` - total number of songs in an album
+  - `album_id`, `album_title`
+  - `album_type` - `Album` or `Single`, as seen on YT Music album page
+  - `album_duration`
+  - `album_artist` - first album artist
+  - `album_artists` - all album artists, separated by `,&nbsp;`
+- **Playlist related**
+  - `song_playlist_index` - song's index in a playlist
+  - `playlist_total` - total number of songs in a playlist
+  - `playlist_id`, `playlist_title`
+  - `playlist_author` - first playlist author
+  - `playlist_authors` - all playlist authors (collaborators), separated by `,&nbsp;`
+  - `playlist_visibility` - `Public`, `Unlisted` or `Private`
+- **Other**
+  - `date`, `time`, `date_time` - date and/or approximate time of download
+  - `ext` - **can only be used at the end of the template**
 
 ## Archive file
 
@@ -158,26 +158,25 @@ If a relative path is provided, it will be taken as relative to the specified ba
 Follow the instructions on [ytmusicapi documentation](https://ytmusicapi.readthedocs.io/en/latest/setup.html#authenticated-requests) to get your account headers ready for use with `ytmusicdl.py`.
 
 Specify your JSON file containing account header data using the `--account-headers` argument. This lets you use special placeholder IDs to download songs from your library:
-* `library_songs` - Download songs from the Songs tab on the Library page
-* `library_albums` - Download each album on the Albums tab on the Library page
-* `library_playlists` - Download each playlist on the Playlists tab on the Library page
-* `liked_songs` - Download your liked songs playlist
+
+- `library_songs` - Download songs from the Songs tab on the Library page
+- `library_albums` - Download each album on the Albums tab on the Library page
+- `library_playlists` - Download each playlist on the Playlists tab on the Library page
+- `liked_songs` - Download your liked songs playlist
 
 Most of the time you will be using `library_songs` as it includes liked songs and all available songs from albums added to your library.
 
-
 ## Download options
 
-* `--skip-existing` will skip over existing files without overwriting
-* `--skip-download` will not download the audio, but will still perform other actions.<br>
-Notice: any processed song will still be added to the archive even when using `--skip-download`.
-* `--playlist-limit` limits the number of songs to be downloaded from **each** playlist.
-* `--download-limit` limits the number of songs to be downloaded in the current instance.
-* `--no-lyrics` will not get the lyrics for songs, this skips an API request and speeds up the download slightly.
-* `--write-json` and `--write-lyrics` will write out a JSON file containing song information (the contents of the `song: dict` from source code) and the song lyrics (if available) respectively.
-* `--write-cover` will write out the song cover art in the selected format.
-* `--cover-format` selects the cover format (`png` or `jpg`) to be embedded in metadata and to be writte out by `--write-cover`.
-
+- `--skip-existing` will skip over existing files without overwriting
+- `--skip-download` will not download the audio, but will still perform other actions.<br>
+  Notice: any processed song will still be added to the archive even when using `--skip-download`.
+- `--playlist-limit` limits the number of songs to be downloaded from **each** playlist.
+- `--download-limit` limits the number of songs to be downloaded in the current instance.
+- `--no-lyrics` will not get the lyrics for songs, this skips an API request and speeds up the download slightly.
+- `--write-json` and `--write-lyrics` will write out a JSON file containing song information (the contents of the `song: dict` from source code) and the song lyrics (if available) respectively.
+- `--write-cover` will write out the song cover art in the selected format.
+- `--cover-format` selects the cover format (`png` or `jpg`) to be embedded in metadata and to be writte out by `--write-cover`.
 
 ## Example commands
 
@@ -192,12 +191,13 @@ Downloads the specified URL to the current working directory in the default form
 `ytmusicdl.py -f "m4a" -p "Music" -a "archive.txt" -o "{album_artist|song_artist}/{album_title|song_title}/{song_index|+ - }{song_title}.{ext}" URL [URL ...]`
 
 Downloads the specified URL(s) with the following options:
-* Selected format: `m4a` 
-* Base path: `Music` (relative to current working directory)
-* Archive file `archive.txt` (relative to base path)
-* Output template: `{album_artist|song_artist}/{album_title|song_title}/{song_index|+ - }{song_title}.{ext}`
-  * Example for audio-only song: `Album Artist/Album Title/1 - Song Title.ext`
-  * Example for music video: `Song Artist/Song Title/Song Title.ext`
+
+- Selected format: `m4a`
+- Base path: `Music` (relative to current working directory)
+- Archive file `archive.txt` (relative to base path)
+- Output template: `{album_artist|song_artist}/{album_title|song_title}/{song_index|+ - }{song_title}.{ext}`
+  - Example for audio-only song: `Album Artist/Album Title/1 - Song Title.ext`
+  - Example for music video: `Song Artist/Song Title/Song Title.ext`
 
 ## Building it yourself
 
@@ -209,4 +209,4 @@ To build the project to an EXE file, you just need to run the `build.cmd` script
 
 ## Notes
 
-* `ytmusicdl.py` will download music videos as **audio only**.
+- `ytmusicdl.py` will download music videos as **audio only**.
