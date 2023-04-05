@@ -12,3 +12,8 @@ archive.txt
 log.txt
 batch.txt
 *.exe
+*.opus
+*.m4a
+*.mp3
+*.flac
+*.wav
