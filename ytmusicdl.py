@@ -54,7 +54,8 @@ cover_formats = ['png', 'jpg']
 song_types = {
     "MUSIC_VIDEO_TYPE_ATV": 'Song',
     "MUSIC_VIDEO_TYPE_OMV": 'Video',
-    "MUSIC_VIDEO_TYPE_UGC": 'Video'
+    "MUSIC_VIDEO_TYPE_UGC": 'Video',
+    "MUSIC_VIDEO_TYPE_OFFICIAL_SOURCE_MUSIC": 'Video'
 }
 
 # Schemas for each data structure
