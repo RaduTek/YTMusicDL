@@ -1,0 +1,22 @@
+[project]
+name = "YTMusicDL"
+version = "2.0.0"
+authors = [
+  { name="RaduTek", email="radutek13@gmail.com" },
+]
+description = "YouTube Music downloader with metadata"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/RaduTek/YTMusicDL"
+"Bug Tracker" = "https://github.com/RaduTek/YTMusicDL/issues"
+
+[build-system]
+requires = ["setuptools>=50"]
+build-backend = "setuptools.build_meta"
