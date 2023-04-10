@@ -6,6 +6,8 @@
 
 </div>
 
+**This branch is for version 2.0, where the app is moving from a simple script to an object based design.**
+
 Command line tool to download music from YT Music with appropriate metadata.
 
 **Note:** This tool is still in its infancy, expect bugs. Please report any issues encountered with this tool.
