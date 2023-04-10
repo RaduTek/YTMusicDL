@@ -1,5 +1,5 @@
 # Python specific
-/venv/
+/venv
 __pycache__
 *.egg-info
 
@@ -13,10 +13,10 @@ __pycache__
 /.vscode/
 
 # Test output
-/downloads/
-/Downloads/
-/music/
-/Music/
+downloads
+Downloads
+music
+Music
 archive.txt
 log.txt
 batch.txt
