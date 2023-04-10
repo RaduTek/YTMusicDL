@@ -4,8 +4,6 @@
 /Downloads/
 /music/
 /Music/
-/test/
-/Test/
 /build/
 /dist/
 archive.txt
@@ -17,3 +15,5 @@ batch.txt
 *.mp3
 *.flac
 *.wav
+__pycache__
+*.egg-info
