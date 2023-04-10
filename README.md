@@ -16,10 +16,6 @@ Command line tool to download music from YT Music with appropriate metadata.
 
 `ytmusicdl.py` is easy to set up and has been tested on Windows and Linux. Make sure the prerequisites listed below are installed on your system.
 
-### Windows binary
-
-I will no longer be maintaining the Windows binary. The `build.cmd` file will still be included, but you'll have to install some other prerequisites for that to work.
-
 ### Prerequisites:
 
 - **Python** 3.8+ [(Official Website)](https://www.python.org/downloads/)
@@ -200,14 +196,6 @@ Downloads the specified URL(s) with the following options:
 - Output template: `{album_artist|song_artist}/{album_title|song_title}/{song_index|+ - }{song_title}.{ext}`
   - Example for audio-only song: `Album Artist/Album Title/1 - Song Title.ext`
   - Example for music video: `Song Artist/Song Title/Song Title.ext`
-
-## Building it yourself
-
-### Windows
-
-To build the project to an EXE file, you just need to run the `build.cmd` script in the `setup` folder.
-
-**Prerequisite:** `pyinstaller` (install from `pip`) - make sure it's added to `%PATH%`.
 
 ## Notes
 
