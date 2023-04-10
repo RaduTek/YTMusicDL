@@ -1,19 +1,27 @@
-/.idea/
+# Python specific
 /venv/
+__pycache__
+*.egg-info
+
+# Build outpt
+/build/
+/dist/
+*.exe
+
+# IDE Specific
+/.idea/
+/.vscode/
+
+# Test output
 /downloads/
 /Downloads/
 /music/
 /Music/
-/build/
-/dist/
 archive.txt
 log.txt
 batch.txt
-*.exe
 *.opus
 *.m4a
 *.mp3
 *.flac
 *.wav
-__pycache__
-*.egg-info
