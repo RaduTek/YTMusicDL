@@ -128,13 +128,13 @@ Notice: The output template must end in `.{ext}`, as hard-coding a file extensio
   - `album_type` - `Album` or `Single`, as seen on YT Music album page
   - `album_duration`
   - `album_artist` - first album artist
-  - `album_artists` - all album artists, separated by `,&nbsp;`
+  - `album_artists` - all album artists, separated by `, `
 - **Playlist related**
   - `song_playlist_index` - song's index in a playlist
   - `playlist_total` - total number of songs in a playlist
   - `playlist_id`, `playlist_title`
   - `playlist_author` - first playlist author
-  - `playlist_authors` - all playlist authors (collaborators), separated by `,&nbsp;`
+  - `playlist_authors` - all playlist authors (collaborators), separated by `, `
   - `playlist_visibility` - `Public`, `Unlisted` or `Private`
 - **Other**
   - `date`, `time`, `date_time` - date and/or approximate time of download
