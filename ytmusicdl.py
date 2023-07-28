@@ -1007,6 +1007,7 @@ def download_playlist(playlist_id: str, limit: int = default_config['playlist_li
 
 
 def parse_url(url: str):
+    url = url.strip();
     url_props = dict()
     url_props['original'] = url
 
