@@ -57,6 +57,8 @@ song_types = {
     "MUSIC_VIDEO_TYPE_OFFICIAL_SOURCE_MUSIC": "Video",
 }
 
+playlist_identifiers = ["PLLL", "PLNR"]
+
 # Schemas for each data structure
 song_schema = {
     "id": str,
@@ -1311,7 +1313,7 @@ def parse_url(url: str):
         url_props["is_url"] = False
         url_props["id"] = url
 
-    if url_props["id"].startswith("PLLL") or url_props["id"] == "LM":
+    if (url_props["id"][:4] in playlist_identifiers) or url_props["id"] == "LM":
         # ID represents a playlist
         url_props["type"] = "Playlist"
     elif url_props["id"].startswith("OLAK5uy_"):
