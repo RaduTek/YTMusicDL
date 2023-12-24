@@ -899,6 +899,10 @@ def download_audio(song: dict, show_info: bool = True):
                 stats["errors"] += 1
                 return "fail_ioerr"
 
+    out_file_basedir = os.path.dirname(out_file_ext)
+    if not os.path.exists(out_file_basedir):
+        os.makedirs(out_file_basedir)
+
     cover_bin = None
     if "cover" in song:
         cover_file = None
