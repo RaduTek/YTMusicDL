@@ -1,6 +1,6 @@
 [project]
 name = "YTMusicDL"
-version = "2.0.0"
+version = "2.0.0a0"
 authors = [
   { name="RaduTek", email="radutek13@gmail.com" },
 ]
@@ -14,9 +14,12 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/RaduTek/YTMusicDL"
-"Bug Tracker" = "https://github.com/RaduTek/YTMusicDL/issues"
+Homepage = "https://github.com/RaduTek/YTMusicDL"
+Issues = "https://github.com/RaduTek/YTMusicDL/issues"
 
 [build-system]
-requires = ["setuptools>=50"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[build]
+files = ["src/YTMusicDL/*"]

@@ -1,19 +1,25 @@
-from typing import TypedDict
+from typing import TypedDict, Literal
 
-formats_ext = ['opus', 'm4a', 'mp3']
-formats_ytdlp = {'opus': 'opus', 'm4a': 'm4a', 'mp3': 'mp3'}
-cover_formats = ['png', 'jpg']
+AudioFormats = Literal["opus", "m4a", "mp3"]
+CoverFormats = Literal["png", "jpg"]
+SongTypes = Literal["audio", "video"]
 
-song_types = {
-    "MUSIC_VIDEO_TYPE_ATV": 'Song',
-    "MUSIC_VIDEO_TYPE_OMV": 'Video',
-    "MUSIC_VIDEO_TYPE_UGC": 'Video',
-    "MUSIC_VIDEO_TYPE_OFFICIAL_SOURCE_MUSIC": 'Video'
-}
+# formats_ext = ["opus", "m4a", "mp3"]
+# formats_ytdlp = {"opus": "opus", "m4a": "m4a", "mp3": "mp3"}
+# cover_formats = ["png", "jpg"]
+
+# song_types = {
+#     "MUSIC_VIDEO_TYPE_ATV": "Song",
+#     "MUSIC_VIDEO_TYPE_OMV": "Video",
+#     "MUSIC_VIDEO_TYPE_UGC": "Video",
+#     "MUSIC_VIDEO_TYPE_OFFICIAL_SOURCE_MUSIC": "Video",
+# }
+
 
 class Artist(TypedDict):
     name: str
     id: str
+
 
 class Album(TypedDict):
     id: str
@@ -25,12 +31,13 @@ class Album(TypedDict):
     artists: list[Artist]
     cover: str
 
+
 class Song(TypedDict):
     id: str
     title: str
     duration: str
     year: int
-    type: str
+    type: SongTypes
     artists: list[Artist]
     cover: str
     lyrics: str
@@ -40,8 +47,10 @@ class Song(TypedDict):
     playlist: dict
     playlist_index: int
 
+
 class AlbumList(Album):
     songs: list[Song]
+
 
 class PlayList(TypedDict):
     id: str
