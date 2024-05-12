@@ -1435,7 +1435,19 @@ def parse_special_account(key: str):
             log.debug(format_exc())
             stats["errors"] += 1
     elif key == "liked_songs":
-        urls.append("LM")
+        try:
+            log.info("Loading liked songs playlist from account library...")
+            limit = default_config["playlist_limit"]
+            if args["download_limit"] != default_config["download_limit"]:
+                limit = args["download_limit"]
+            liked_songs = ytm.get_liked_songs(limit)
+            for song in liked_songs["tracks"]:
+                if "videoId" in song and ("isAvailable" in song or song["isAvailable"]):
+                    urls.append(song["videoId"])
+        except Exception:
+            log.warning(f"Failed to get liked songs from account library!")
+            log.debug(format_exc())
+            stats["errors"] += 1
 
     if len(urls) == 0:
         return
