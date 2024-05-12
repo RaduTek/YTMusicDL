@@ -1,4 +1,4 @@
 music-tag
 Pillow
 yt-dlp
-ytmusicapi
+ytmusicapi>=1.7.0
