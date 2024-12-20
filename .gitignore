@@ -13,6 +13,7 @@ __pycache__
 /.vscode/
 
 # Test output
+tests/results
 downloads
 Downloads
 music
