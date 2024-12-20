@@ -1,19 +1,21 @@
 from typing import TypedDict, Literal
 
-AudioFormats = Literal["opus", "m4a", "mp3"]
-CoverFormats = Literal["png", "jpg"]
-SongTypes = Literal["audio", "video"]
+AudioFormat = Literal["opus", "m4a"]
+CoverFormat = Literal["png", "jpg"]
+SongType = Literal["audio", "video"]
+UrlType = Literal["watch", "playlist", "album", "artist", "library"]
+
 
 # formats_ext = ["opus", "m4a", "mp3"]
 # formats_ytdlp = {"opus": "opus", "m4a": "m4a", "mp3": "mp3"}
 # cover_formats = ["png", "jpg"]
 
-# song_types = {
-#     "MUSIC_VIDEO_TYPE_ATV": "Song",
-#     "MUSIC_VIDEO_TYPE_OMV": "Video",
-#     "MUSIC_VIDEO_TYPE_UGC": "Video",
-#     "MUSIC_VIDEO_TYPE_OFFICIAL_SOURCE_MUSIC": "Video",
-# }
+song_types: dict[str, SongType] = {
+    "MUSIC_VIDEO_TYPE_ATV": "audio",
+    "MUSIC_VIDEO_TYPE_OMV": "video",
+    "MUSIC_VIDEO_TYPE_UGC": "video",
+    "MUSIC_VIDEO_TYPE_OFFICIAL_SOURCE_MUSIC": "video",
+}
 
 
 class Artist(TypedDict):
@@ -21,12 +23,16 @@ class Artist(TypedDict):
     id: str
 
 
+ArtistList = dict[str, Artist]
+
+
 class Album(TypedDict):
     id: str
+    playlist_id: str
     title: str
     type: str
     year: int
-    duration: str
+    duration: int
     total: int
     artists: list[Artist]
     cover: str
@@ -35,9 +41,9 @@ class Album(TypedDict):
 class Song(TypedDict):
     id: str
     title: str
-    duration: str
+    duration: int
     year: int
-    type: SongTypes
+    type: SongType
     artists: list[Artist]
     cover: str
     lyrics: str
@@ -48,8 +54,11 @@ class Song(TypedDict):
     playlist_index: int
 
 
+SongList = dict[str, Song]
+
+
 class AlbumList(Album):
-    songs: list[Song]
+    songs: SongList
 
 
 class PlayList(TypedDict):
@@ -57,8 +66,15 @@ class PlayList(TypedDict):
     title: str
     authors: list[Artist]
     year: int
-    duration: str
+    duration: int
     total: int
     visibility: str
     description: str
     songs: list[Song]
+
+
+class Source(TypedDict):
+    url: str
+    type: UrlType
+    subtype: UrlType
+    id: str
