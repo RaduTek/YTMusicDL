@@ -72,3 +72,23 @@ def parse_url(url: str) -> Source:
                 raise ValueError("Invalid YouTube Music URL")
 
     return source
+
+
+def parse_source(source: str) -> Source:
+    """Parse a source URL or ID"""
+    if source.startswith("http"):
+        return parse_url(source)
+    return parse_id(source)
+
+
+def get_source(source: str | Source, source_type: str | None = None) -> Source:
+    """Get a source from a URL or Source"""
+    if type(source) is str:
+        source = parse_source(source)
+
+    if source_type and source["type"] != source_type:
+        raise ValueError(
+            f"Invalid source type: '{source['type']}', expected type '{source_type}'"
+        )
+
+    return source
