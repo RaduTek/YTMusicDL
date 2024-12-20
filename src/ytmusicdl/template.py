@@ -8,7 +8,7 @@ def get_template_key(key: str, song: Song, config: Config) -> str:
     """Get a key from the song data"""
 
     if key == "ext":
-        return "{ext}"
+        return config.format
 
     elif key in ["date_time", "datetime"]:
         return datetime.now().strftime(config.datetime_format)
