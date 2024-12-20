@@ -1,8 +1,9 @@
 import os
+import ytmusicdl.metadata as metadata
+import ytmusicdl.url as url
 import ytmusicdl.utils as utils
 from ytmusicdl.types import *
 from ytmusicdl.config import Config
-from datetime import datetime
 from yt_dlp import YoutubeDL
 from ytmusicapi import YTMusic
 
@@ -14,6 +15,8 @@ class YTMusicDL:
     ytdlp: YoutubeDL
 
     config: Config
+
+    last_raw_data: dict = None
 
     def __init__(self, config: Config = Config()):
         """Create a new YTMusicDL object"""
@@ -29,187 +32,103 @@ class YTMusicDL:
 
         return
 
-    def parse_output_template(self, templ_str: str, extension: str, song: dict):
-        # Generate dict of values for the template
-        templ_values = dict()
-        # Parse values for song data
-        for key in song.keys():
-            if key not in [
-                "artists",
-                "album",
-                "lyrics",
-                "lyrics_source",
-                "playlist",
-                "cover",
-            ] and type(key) not in [list, dict]:
-                templ_values["song_" + key] = str(song[key])
-        # Parse artists separately
-        if "artists" in song.keys() and len(song["artists"]) > 0:
-            templ_values["song_artist"] = song["artists"][0][
-                "name"
-            ]  # First artist only
-            templ_values["song_artists"] = utils.join_artists(
-                song["artists"], self.config.filename_separator
-            )
+    def find_audio_counterpart(self, song: Song, album_id: str | None = None) -> str:
+        """Find the audio counterpart of a music video song\n
+        Workaround for free accounts, as YTM API forces music videos for songs in album playlists\n
+        This is done by searching for the song on YTM and picking the matching result\n
+        Only downside is that it takes a few seconds to fetch the data"""
+        artist = song["artists"][0]["name"]
 
-        # Parse values for album data
-        if "album" in song.keys():
-            album = song["album"]
-            for key in album.keys():
-                if (
-                    key not in ["artists", "songs", "cover"]
-                    and key is not list
-                    and key is not dict
-                ):
-                    templ_values["album_" + key] = str(album[key])
-            # Parse artists separately
-            if "artists" in album.keys() and len(album["artists"]) > 0:
-                templ_values["album_artist"] = album["artists"][0][
-                    "name"
-                ]  # First artist only
-                templ_values["album_artist"] = utils.join_artists(
-                    album["artists"], self.config.filename_separator
-                )
-
-        # Parse values for playlist data
-        if "playlist" in song.keys():
-            playlist = song["playlist"]
-            for key in playlist.keys():
-                if (
-                    key not in ["authors", "songs", "description"]
-                    and key is not list
-                    and key is not dict
-                ):
-                    templ_values["playlist_" + key] = str(playlist[key])
-            # Parse authors separately
-            if "authors" in playlist.keys() and len(playlist["authors"]) > 0:
-                templ_values["playlist_author"] = playlist["authors"][0][
-                    "name"
-                ]  # First author only
-                templ_values["playlist_authors"] = utils.join_artists(
-                    playlist["authors"], self.config.filename_separator
-                )
-
-        # Additional values
-        templ_values["date_time"] = templ_values["datetime"] = datetime.now().strftime(
-            self.config.datetime_format
+        # Search for the song on YouTube Music
+        # Filter for audio only tracks
+        self.last_raw_data = results = self.ytmusic.search(
+            f"{song["title"]} {artist}", filter="songs", ignore_spelling=True
         )
-        templ_values["date"] = datetime.now().strftime(self.config.date_format)
-        templ_values["time"] = datetime.now().strftime(self.config.time_format)
 
-        # Sanitize all template values for file names
-        for key, value in templ_values.items():
-            templ_values[key] = utils.sanitize_filename(
-                str(value), self.config.filename_sanitize_placeholder
-            )
+        if len(results) > 0:
+            if album_id == None:
+                # No album ID provided, return the first result
+                return results[0]["videoId"]
 
-        # Extension shall not be sanitized
-        templ_values["ext"] = extension
+            for result in results:
+                # Check if the song is in the album
+                if album_id == result["browseId"]:
+                    return result["videoId"]
 
-        # log.debug("Output template values: " + str(templ_values))
+        raise RuntimeError(
+            f"Could not find audio counterpart for song '{song["title"]}'"
+        )
 
-        # Parse the string manually
-        # We assume the template is correct, as it has been checked previously
-        parsed_str = ""
-        i = 0
-        while i < len(templ_str):
-            if templ_str[i] == "{":
-                # Find bracket open-close pair
-                open_pos = i
-                close_pos = templ_str.find("}", i + 1)
-                keys = templ_str[open_pos + 1 : close_pos]
-                after = ""
-                # '+' operator specifies text to be added after a valid parameter
-                # Must be preceded by '|' to work (last key in list is empty)
-                if "+" in keys:
-                    keys = keys.split("+")
-                    after = keys[1]
-                    keys = keys[0]
-                keys = keys.split("|")
-                val = None
-                for key in keys:
-                    if key in templ_values:
-                        val = templ_values[key]
-                        break
-                if not val:
-                    if keys[-1] == "":
-                        # The last key is empty and the previous keys haven't matched
-                        # Supress the placeholder string
-                        val = ""
-                        after = ""
-                    else:
-                        # No key has matched to available params, using placeholder instead
-                        val = self.config.unknown_placeholder
-                parsed_str += val + after
-                # Jump to the closing bracket position
-                i = close_pos
-            else:
-                parsed_str += templ_str[i]
-            i += 1
-        return parsed_str
-
-    def check_output_template(templ: str):
-        # Check the output template for any errors:
-        if not templ.endswith(".{ext}"):
-            # log.error("Template string must end with '.{ext}'!")
-            return False
-        if templ.count("{") != templ.count("}"):
-            # Number of opened brackets is not equal to number of closed brackets
-            return False
-        i = 0
-        while i < len(templ):
-            if templ[i] == "{":
-                open_pos = i  # Position in string where bracket was open
-                close_pos = templ.find("}", i + 1)  # Position where bracket is closed
-                if close_pos == -1 or open_pos == close_pos - 1:
-                    # Bracket is not closed or there is nothing between the brackets
-                    return False
-                keys = templ[open_pos + 1 : close_pos]
-                if "{" in keys:
-                    # Another bracket is opened inside the pair
-                    return False
-                i = close_pos
-            i += 1
-        return True
-
-    def find_song_counterpart(self, id: str):
-        song_id: str = None
-
-        return song_id
+    def get_last_raw_data(self):
+        """Return the last fetched data from YouTube Music\n
+        Only for testing purposes, do not use as a reliable data source"""
+        return self.last_raw_data
 
     def get_album_id_from_playlist(self, playlist_id: str):
+        """Get the album browseId from a playlist browseId"""
         return self.ytmusic.get_album_browse_id(playlist_id)
 
-    def get_album_info(self, id: str):
-        """Get metadata for album ID"""
-        album_info = Album(id=id)
-        ytm_album = None
-        try:
-            ytm_album = self.ytmusic.get_album(id)
-        except Exception:
-            return None, None
+    def __get_album_info(self, source: Source | str, songs: bool) -> Album | AlbumList:
+        """Get metadata for album source with or without songs"""
 
-        if ytm_album:
-            album_info["title"] = ytm_album["title"]
-            album_info["type"] = ytm_album["type"]
-            album_info["year"] = ytm_album["year"]
-            album_info["duration"] = ytm_album["duration"]
-            if "description" in ytm_album:
-                album_info["description"] = ytm_album["description"]
-            album_info["total"] = ytm_album["trackCount"]
-            album_info["artists"] = []
-            for ytm_artist in ytm_album["artists"]:
-                artist = Artist(name=ytm_artist["name"], id=ytm_artist["id"])
-                album_info["artists"].append(artist)
+        if type(source) is str:
+            source = url.parse_id(source)
 
-            # Get the largest song cover/thumbnail (always the last in the dict)
-            if "thumbnails" in ytm_album:
-                album_info["cover"] = ytm_album["thumbnails"][-1]["url"]
-            return album_info, ytm_album
+        browseId = source["id"]
 
-        return None, ytm_album
+        if source["type"] == "playlist" and source["subtype"] == "album":
+            browseId = self.get_album_id_from_playlist(browseId)
+        elif source["type"] != "album":
+            raise ValueError(
+                f"Invalid source type: '{source['type']}', expected type 'album' or 'playlist' with subtype 'album'."
+            )
 
-    def get_song_info(self, id: str):
-        song_info = Song()
+        self.last_raw_data = data = self.ytmusic.get_album(browseId)
 
-        return song_info
+        if songs:
+            return metadata.parse_album_data_list(data, browseId)
+        else:
+            return metadata.parse_album_data(data, browseId)
+
+    def get_album_info(self, source: Source | str) -> Album:
+        """Get metadata for album source"""
+
+        return self.__get_album_info(source, False)
+
+    def get_album_list(self, source: Source | str) -> AlbumList:
+        """Get metadata for album source, including songs"""
+
+        return self.__get_album_info(source, True)
+
+    def get_song_info(self, source: Source | str) -> Song:
+        """Get metadata for song source"""
+
+        if type(source) is str:
+            source = url.parse_id(source)
+
+        if source["type"] != "watch":
+            raise ValueError(
+                f"Invalid source type: '{source['type']}', expected type 'watch'."
+            )
+
+        id = source["id"]
+
+        self.last_raw_data = data = self.ytmusic.get_watch_playlist(id, limit=2)
+
+        return metadata.parse_track_song(data["tracks"][0])
+
+    def get_song_with_album(self, source: Source | str) -> Song:
+        """Get metadata for song source, including album data and song index"""
+
+        song = self.get_song_info(source)
+
+        album_id = song["album"]["id"]
+        album = self.get_album_list(album_id)
+
+        song["album"] = album
+
+        ## This will only work with Premium accounts right now
+        ## as YTM API pushes music videos with different IDs for album playlists
+        song["index"] = album["songs"][song["id"]]["index"]
+
+        return song
