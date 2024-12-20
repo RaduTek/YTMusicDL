@@ -1,4 +1,4 @@
-from ytmusicdl.types import AudioFormats, CoverFormats
+from ytmusicdl.types import AudioFormat, CoverFormat
 
 from dataclasses import dataclass
 
@@ -6,11 +6,11 @@ from dataclasses import dataclass
 @dataclass
 class Config:
     base_path: str = ""
-    format: AudioFormats = "opus"
+    format: AudioFormat = "opus"
     quality: int = 0  # Maximum/optimized quality
     output_template: str = "{song_title} - {song_artist} [{song_id}].{ext}"
     auth_headers: dict = None
-    cover_format: CoverFormats = "png"  # Can be 'png' or 'jpg'
+    cover_format: CoverFormat = "png"  # Can be 'png' or 'jpg'
     write_cover: bool = False
     write_lyrics: bool = False
     no_lyrics: bool = False
