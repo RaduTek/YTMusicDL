@@ -1,5 +1,5 @@
 import argparse
-import ytmusicdl.config
+import ytmusicdl.config as config
 
 
 def parse_args():
