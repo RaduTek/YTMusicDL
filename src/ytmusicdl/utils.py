@@ -1,4 +1,4 @@
-from ytmusicdl.types import Artist
+from ytmusicdl.types import *
 import json
 
 
@@ -32,3 +32,22 @@ def join_artists(artists: list[Artist], separator: str = ", "):
     for artist in artists:
         artist_names.append(artist["name"])
     return separator.join(artist_names)
+
+
+def length_to_seconds(length: str) -> int:
+    """Converts a time string to seconds"""
+    parts = length.split(":")
+    parts.reverse()
+    seconds = 0
+    for i, part in enumerate(parts):
+        seconds += int(part) * (60**i)
+    return seconds
+
+
+def seconds_to_length(seconds: int) -> str:
+    """Converts seconds to a time string"""
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours == 0:
+        return f"{minutes:02d}:{seconds:02d}"
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
