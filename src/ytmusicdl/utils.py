@@ -2,6 +2,10 @@ from ytmusicdl.types import *
 import json
 
 
+def sourceable_str(sourceable: Sourceable) -> str:
+    return f"'{sourceable['title']}' ({sourceable["id"]})"
+
+
 # Write dict to JSON file
 def write_out_json(my_dict, file_name):
     s = json.dumps(my_dict, indent=2)
