@@ -87,10 +87,11 @@ def parse_template(template: str, song: Song, config: Config) -> str:
     """Parse and replace keys in the template string using song data."""
 
     def replace_key(match):
-        expr = match.group(1)
+        expr = str(match.group(1))
 
         # Check for optional separator
         sep = expr.split("+")
+        expr = sep[0]
         # Will be empty if no optional separator
         sep = sep[1] if len(sep) > 1 else ""
 
