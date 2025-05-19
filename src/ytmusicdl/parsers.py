@@ -109,3 +109,27 @@ def parse_album_data_list(data: dict, id: str) -> AlbumList:
         raise ValueError("No tracks found in album data.")
 
     return album_list
+
+
+def find_song_in_albumlist(song: Song, album: AlbumList = None) -> int:
+    """Search for a song in album list to find it's index, and update ID in album if necessary"""
+
+    if not album:
+        album = song["album"]
+    
+    for id, s in album["songs"].items():
+        if song["title"].lower() == s["title"].lower():
+            # we found song in the album list
+            # update album list to replace video with audio song
+
+            old_song = album["songs"].pop(id)
+            old_song["id"] = song["id"]
+            old_song["type"] = song["type"]
+            old_song["duration"] = song["duration"]
+            album["songs"][song["id"]] = old_song
+            
+            song["index"] = old_song["index"]
+
+            return old_song["index"]
+    
+    raise KeyError("Song not found in album!")
