@@ -6,6 +6,7 @@ from yt_dlp import YoutubeDL
 from ytmusicdl.types import Song, Sourceable
 from ytmusicdl.config import Config
 from ytmusicdl.types import AudioFormat, AudioQuality
+import ytmusicdl.utils as utils
 
 
 ytdlp_format_map: dict[AudioFormat, dict[AudioQuality, str]] = {
@@ -68,10 +69,14 @@ def download_cover(sourceable: Sourceable, config: Config):
     """Download cover for a sourceable object"""
 
     if "cover" not in sourceable:
-        raise ValueError("Sourceable object does not have a cover art URL")
+        raise RuntimeError("Sourceable object does not have a cover art URL")
+    
+    if "cover_data" in sourceable:
+        log.debug(f"Cover already downloaded for {utils.sourceable_str(sourceable)}")
+        return
 
     log.debug(
-        f"Downloading cover for '{sourceable['title']}' in format {config.cover_format}"
+        f"Downloading cover for {utils.sourceable_str(sourceable)} in format {config.cover_format}"
     )
 
     cover_url = sourceable["cover"]
