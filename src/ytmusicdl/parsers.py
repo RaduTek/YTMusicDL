@@ -1,5 +1,6 @@
 from ytmusicdl.types import *
 import ytmusicdl.utils as utils
+import ytmusicdl.url as url
 
 
 def parse_artist(data: dict) -> Artist:
@@ -104,6 +105,7 @@ def parse_album_data_list(data: dict, id: str) -> AlbumList:
     if "tracks" in data:
         for song_data in data["tracks"]:
             song = parse_track_song(song_data)
+            song["source"] = url.get_source(song["id"])
             album_list["songs"][song["id"]] = song
     else:
         raise ValueError("No tracks found in album data.")
