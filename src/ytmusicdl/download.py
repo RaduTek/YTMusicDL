@@ -6,6 +6,7 @@ from yt_dlp import YoutubeDL
 from ytmusicdl.types import Song, Sourceable
 from ytmusicdl.config import Config
 from ytmusicdl.types import AudioFormat, AudioQuality
+import ytmusicdl.url as url
 import ytmusicdl.utils as utils
 
 
@@ -70,7 +71,7 @@ def download_cover(sourceable: Sourceable, config: Config):
 
     if "cover" not in sourceable:
         raise RuntimeError("Sourceable object does not have a cover art URL")
-    
+
     if "cover_data" in sourceable:
         log.debug(f"Cover already downloaded for {utils.sourceable_str(sourceable)}")
         return
@@ -97,3 +98,31 @@ def download_cover(sourceable: Sourceable, config: Config):
     log.debug(f"Downloaded cover for '{sourceable['title']}'")
 
     sourceable["cover_data"] = cover_data
+
+
+def get_playlist_items(playlist_url: str) -> list[Sourceable]:
+    ytdlp_opts = {
+        "quiet": True,
+        "extract_flat": True,
+        "skip_download": True,
+    }
+
+    with YoutubeDL(ytdlp_opts) as ydl:
+        info = ydl.extract_info(playlist_url, download=False)
+        if "entries" in info:
+            entries = info["entries"]
+            videos = []
+
+            for entry in entries:
+                if "id" in entry and "title" in entry:
+                    videos.append(
+                        Sourceable(
+                            id=entry["id"],
+                            title=entry["title"],
+                            source=url.get_source(entry["id"]),
+                        )
+                    )
+
+            return videos
+        else:
+            return []
