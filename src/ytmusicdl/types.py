@@ -74,3 +74,14 @@ class PlayList(Sourceable):
     visibility: str
     description: str
     songs: list[Song]
+
+
+class ArchiveSong(TypedDict):
+    id: str
+    title: str
+    artists: str
+    file_name: str
+
+
+class Archive(TypedDict):
+    downloaded_songs: list[ArchiveSong]
