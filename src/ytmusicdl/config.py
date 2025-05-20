@@ -9,8 +9,11 @@ class Config:
     format: AudioFormat = "m4a"
     quality: AudioQuality = "high"
 
+    auth_file: str = None
+    archive_file: str = None
+    skip_already_archive_message: bool = False
+
     output_template: str = "{song_title} - {song_artist} [{song_id}].{ext}"
-    auth_headers: dict = None
     cover_format: CoverFormat = "jpg"  # Can be 'png' or 'jpg'
     write_cover: bool = False
     write_lyrics: bool = False
@@ -19,7 +22,6 @@ class Config:
     skip_download: bool = False
     download_limit: int = 0  # 0 means no limit
     playlist_limit: int = 5000  # Default is YT's limit for playlist length
-    skip_already_archive_message: bool = False
     verbose: bool = False
     log: str = None  # Path to file storing log
     log_verbose: bool = True
