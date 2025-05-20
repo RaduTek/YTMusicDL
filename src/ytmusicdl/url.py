@@ -81,7 +81,7 @@ def parse_source(source: str) -> Source:
     return parse_id(source)
 
 
-def get_source(source: str | Source, source_type: str | None = None) -> Source:
+def get_source(source: str | Source, source_type: UrlType | None = None) -> Source:
     """Get a source from an ID, URL or Source"""
     if type(source) is str:
         source = parse_source(source)
