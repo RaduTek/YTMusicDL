@@ -1,6 +1,10 @@
+from logging import getLogger
 from ytmusicdl.types import *
 import ytmusicdl.utils as utils
 import ytmusicdl.url as url
+
+
+log = getLogger("YTMusicDL")
 
 
 def parse_artist(data: dict) -> Artist:
@@ -104,9 +108,17 @@ def parse_album_data_list(data: dict, id: str) -> AlbumList:
     # Parse song list and add track indexes
     if "tracks" in data:
         for song_data in data["tracks"]:
-            song = parse_track_song(song_data)
-            song["source"] = url.get_source(song["id"])
-            album_list["songs"][song["id"]] = song
+            try:
+                song = parse_track_song(song_data)
+                song["source"] = url.get_source(song["id"])
+                album_list["songs"][song["id"]] = song
+            except Exception as e:
+                song_txt = "unknown song"
+                if "title" in song_data:
+                    song_txt = f"'{song_data["title"]}'"
+                if "videoId" in song_data:
+                    song_txt += f" ({song_data['videoId']})"
+                log.warning(f"Failed to parse song data for {song_txt}: {e}")
     else:
         raise ValueError("No tracks found in album data.")
 
@@ -118,7 +130,7 @@ def find_song_in_albumlist(song: Song, album: AlbumList = None) -> int:
 
     if not album:
         album = song["album"]
-    
+
     for id, s in album["songs"].items():
         if song["title"].lower() == s["title"].lower():
             # we found song in the album list
@@ -129,9 +141,9 @@ def find_song_in_albumlist(song: Song, album: AlbumList = None) -> int:
             old_song["type"] = song["type"]
             old_song["duration"] = song["duration"]
             album["songs"][song["id"]] = old_song
-            
+
             song["index"] = old_song["index"]
 
             return old_song["index"]
-    
+
     raise KeyError("Song not found in album!")
