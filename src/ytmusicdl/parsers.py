@@ -147,3 +147,17 @@ def find_song_in_albumlist(song: Song, album: AlbumList = None) -> int:
             return old_song["index"]
 
     raise KeyError("Song not found in album!")
+
+
+def parse_playlist_data(data: dict) -> PlayList:
+    """Parse playlist data from a YouTube Music playlist response"""
+    playlist = PlayList()
+
+    playlist["id"] = data["playlistId"]
+    playlist["title"] = data["title"]
+    playlist["type"] = data["type"]
+    playlist["duration"] = data["duration_seconds"]
+    playlist["total"] = data["trackCount"]
+    playlist["cover"] = parse_cover_art(data["thumbnails"])
+
+    return playlist
