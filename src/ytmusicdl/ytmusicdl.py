@@ -17,28 +17,31 @@ __version__ = "2.0.0a0"
 class YTMusicDL:
     """YouTube Music Downloader class"""
 
-
     album_data_cache: dict = {}
     config: Config
     last_raw_data: dict[str, AlbumList] = None
     log: logging.Logger
     ytmusic: YTMusic
-
+    print_complete_message: bool = True
 
     def __init__(self, config: Config = Config()):
         """Create a new YTMusicDL object"""
 
         # Load default configuration
         self.config = config
-        
+
         self.log = logging.getLogger("YTMusicDL")
         self.log.propagate = False
-        self.log.setLevel(logging.DEBUG if self.config.log_verbose else logging.INFO)
+        self.log.setLevel(
+            logging.DEBUG
+            if self.config.log_verbose or self.config.verbose
+            else logging.INFO
+        )
 
         # Configure logger to show info messages on stdout
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_formatter = logging.Formatter('%(levelname)s: %(message)s')
+        console_handler.setLevel(logging.DEBUG if self.config.verbose else logging.INFO)
+        console_formatter = logging.Formatter("%(levelname)s: %(message)s")
         console_handler.setFormatter(console_formatter)
         self.log.addHandler(console_handler)
 
@@ -50,6 +53,10 @@ class YTMusicDL:
             os.makedirs(os.path.dirname(log_file), exist_ok=True)
             log_file_handler = logging.FileHandler(log_file)
             log_file_handler.setLevel(log_level)
+            log_file_formatter = logging.Formatter(
+                "%(asctime)s: %(levelname)s: %(message)s"
+            )
+            log_file_handler.setFormatter(log_file_formatter)
             self.log.addHandler(log_file_handler)
 
         self.log.info(f"YTMusicDL version {__version__}")
