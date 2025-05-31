@@ -70,8 +70,7 @@ class YTMusicDL:
 
         return
 
-
-    def find_audio_counterpart(self, song: Song, album_id: str | None = None) -> str:
+    def find_audio_counterpart(self, song: Song, album: Album | None = None) -> str:
         """Find the audio counterpart of a music video song\n
         Workaround for free accounts, as YTM API forces music videos for songs in album playlists\n
         This is done by searching for the song on YTM and picking the matching result\n
@@ -85,49 +84,61 @@ class YTMusicDL:
         )
 
         if len(results) > 0:
-            if album_id == None:
+            if album == None:
                 # No album ID provided, return the first result
                 return results[0]["videoId"]
 
             for result in results:
-                # Check if the song is in the album
-                if album_id == result["album"]["id"]:
+                # Find song by search and match the album ID
+                if album["id"] == result["album"]["id"]:
+                    return result["videoId"]
+
+            for result in results:
+                # Try to match the song by the name and album name
+                if (
+                    str(result["title"]).lower() == song["title"].lower()
+                    and str(result["album"]["name"]).lower() == album["title"].lower()
+                ):
                     return result["videoId"]
 
         raise RuntimeError(
             f"Could not find audio counterpart for song '{song["title"]}'"
         )
 
-
     def get_last_raw_data(self):
         """Return the last fetched data from YouTube Music\n
         Only for testing purposes, do not use as a reliable data source"""
         return self.last_raw_data
 
-
     def get_album_id_from_playlist(self, playlist_id: str):
         """Get the album browseId from a playlist browseId"""
         return self.ytmusic.get_album_browse_id(playlist_id)
 
-
     def __get_album_audio_counterparts(self, album: AlbumList):
         """Find audio counterparts for each song in an album"""
 
+        # Check if the album is already audio
+        if all(song["type"] == "audio" for song in album["songs"].values()):
+            return
+
+        items = download.get_playlist_items(
+            f"https://youtube.com/playlist?list={album['playlist_id']}"
+        )
+
         updated_songs = {}
-        
-        for id, song in album["songs"].items():
+
+        for idx, song in enumerate(album["songs"].values()):
             if song["type"] == "audio":
-                updated_songs[id] = song
+                updated_songs[song["id"]] = song
                 continue
 
-            audio_id = self.find_audio_counterpart(song, album["id"])
+            audio_id = items[idx]["id"]
             song["id"] = audio_id
             song["type"] = "audio"
-            song["source"] = url.get_source(audio_id)
+            song["source"] = items[idx]["source"]
             updated_songs[audio_id] = Song(**song)
 
         album["songs"] = updated_songs
-
 
     def __get_album_info(self, source: Source | str, songs: bool) -> Album | AlbumList:
         """Get metadata for album source with or without songs"""
