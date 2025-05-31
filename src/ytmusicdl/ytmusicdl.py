@@ -142,37 +142,41 @@ class YTMusicDL:
 
     def __get_album_info(self, source: Source | str, songs: bool) -> Album | AlbumList:
         """Get metadata for album source with or without songs"""
-        
+
         source = url.get_source(source)
 
-        browseId = source["id"]
+        browse_id = source["id"]
+        playlist_id = None
 
         if source["type"] == "playlist" and source["subtype"] == "album":
-            browseId = self.get_album_id_from_playlist(browseId)
+            playlist_id = browse_id
+            browse_id = self.get_album_id_from_playlist(browse_id)
         elif source["type"] != "album":
             raise ValueError(
                 f"Invalid source type: '{source['type']}', expected type 'album' or 'playlist' with subtype 'album'."
             )
 
-        self.last_raw_data = data = self.ytmusic.get_album(browseId)
+        self.last_raw_data = data = self.ytmusic.get_album(browse_id)
 
         album = None
 
-        if browseId in self.album_data_cache:
+        if browse_id in self.album_data_cache:
             # Retrieve album data from runtime cache
-            album = self.album_data_cache[browseId]
+            album = self.album_data_cache[browse_id]
         else:
             # Parse raw data from API
-            album = parsers.parse_album_data_list(data, browseId)
+            album = parsers.parse_album_data_list(data, browse_id)
+
+            album["source"] = source
+            if playlist_id:
+                album["playlist_id"] = playlist_id
 
             # Replace video versions with audio versions
             if self.config.album_song_instead_of_video:
                 self.__get_album_audio_counterparts(album)
 
-            album["source"] = source
-
             # Add album to cache, so it won't need to be loaded from the server again
-            self.album_data_cache[browseId] = album
+            self.album_data_cache[browse_id] = album
 
         # Remove songs field if required
         if not songs:
@@ -182,18 +186,15 @@ class YTMusicDL:
 
         return album
 
-
     def get_album_info(self, source: Source | str) -> Album:
         """Get metadata for album source"""
 
         return self.__get_album_info(source, False)
 
-
     def get_album_list(self, source: Source | str) -> AlbumList:
         """Get metadata for album source, including songs"""
 
         return self.__get_album_info(source, True)
-
 
     def get_song_info(self, source: Source | str) -> Song:
         """Get metadata for song source"""
@@ -207,7 +208,6 @@ class YTMusicDL:
         song["source"] = source
 
         return song
-
 
     def get_song_with_album(self, source: Source | str) -> Song:
         """Get metadata for song source, including album data and song index"""
