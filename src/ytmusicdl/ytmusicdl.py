@@ -1,6 +1,7 @@
 import copy
 import os
 import logging
+import traceback
 from ytmusicapi import YTMusic
 import ytmusicdl.download as download
 import ytmusicdl.parsers as parsers
@@ -229,24 +230,36 @@ class YTMusicDL:
 
         return song
 
+    def get_playlist_info(self, source: Source | str) -> PlayList:
+        """Get metadata for playlist source"""
 
-    def download_song(self, song: Song | Source | str, output_path: str = None):
+        source = url.get_source(source, "playlist")
+
+        self.last_raw_data = data = self.ytmusic.get_playlist(
+            source["id"], limit=self.config.playlist_limit
+        )
+
+        playlist = parsers.parse_playlist(data, source["id"])
+        playlist["source"] = source
+
+        return playlist
+
+    def download_song(self, song: Song | Source | str):
         """Download a song from a source to the output path"""
 
-        if not isinstance(song, dict) and 'title' not in song:
+        if not isinstance(song, dict) and "title" not in song:
             source = url.get_source(song)
             if self.config.song_full_metadata:
                 song = self.get_song_with_album(source)
             else:
                 song = self.get_song_info(source)
 
-        if output_path == None:
-            output_path = self.config.base_path
+        self.log.info(f"Downloading song: {utils.sourceable_str(song)}...")
 
         output_file = template.parse_template(
             self.config.output_template, song, self.config
         )
-        output_path = os.path.join(output_path, output_file)
+        output_path = os.path.join(self.config.base_path, output_file)
 
         if "album" in song and "cover" in song["album"]:
             download.download_cover(song["album"], self.config)
@@ -257,19 +270,86 @@ class YTMusicDL:
 
         embed_metadata(output_path, song, self.config)
 
+        if self.print_complete_message:
+            self.log.info("Download complete!")
 
-    def download_album(self, album: AlbumList | Source | str, output_path: str = None):
+    def download_album(self, album: AlbumList | Source | str):
         """Download all songs in an album"""
 
         if type(album) is not AlbumList:
             album = self.get_album_list(album)
-        
+
         self.log.info(f"Downloading album: {utils.sourceable_str(album)}...")
+        self.log.debug(f"Album data: {album}")
+
+        old_value = self.print_complete_message
+        self.print_complete_message = False
 
         for song in album["songs"].values():
-            dl_song = Song(**song)
-            dl_song["album"] = album
-            self.download_song(dl_song, output_path)
-        
-        self.log.info("Download complete!")
+            try:
+                dl_song = Song(**song)
+                dl_song["album"] = album
+                self.download_song(dl_song)
+            except Exception as e:
+                self.log.error(
+                    f"Failed to download song: {utils.sourceable_str(dl_song)}"
+                )
+                if "ERROR" not in str(e):
+                    self.log.error(e)
+                self.log.debug(traceback.format_exc())
+                continue
 
+        self.print_complete_message = old_value
+        if self.print_complete_message:
+            self.log.info("Download complete!")
+
+    def download_playlist(self, playlist: PlayList | Source | str):
+        """Download all songs in a playlist"""
+        raise NotImplementedError("Playlist download not implemented yet")
+
+        # Get playlist metadata
+
+        old_value = self.print_complete_message
+        self.print_complete_message = False
+
+        # Perform download here
+
+        self.print_complete_message = old_value
+        if self.print_complete_message:
+            self.log.info("Download complete!")
+
+    def download(self, source: Source | str):
+        """Download from a source"""
+
+        source = url.get_source(source)
+
+        if source["type"] == "album" or (
+            "subtype" in source and source["subtype"] == "album"
+        ):
+            self.download_album(source)
+        elif source["type"] == "song":
+            self.download_song(source)
+        elif source["type"] == "playlist":
+            self.download_playlist(source)
+        else:
+            raise ValueError(f"Invalid source type: {source['type']}")
+
+    def download_many(self, sources: list[Source | str]):
+        """Download from multiple sources"""
+
+        old_value = self.print_complete_message
+        self.print_complete_message = False
+
+        for source in sources:
+            try:
+                self.download(source)
+            except Exception as e:
+                self.log.error(f"Failed to download source: {source}")
+                if "ERROR" not in str(e):
+                    self.log.error(e)
+                self.log.debug(traceback.format_exc())
+                continue
+
+        self.print_complete_message = old_value
+        if self.print_complete_message:
+            self.log.info("Download complete!")
