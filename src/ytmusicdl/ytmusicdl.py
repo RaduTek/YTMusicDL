@@ -4,7 +4,7 @@ import logging
 import traceback
 from ytmusicapi import YTMusic
 import ytmusicdl.download as download
-import ytmusicdl.parsers as parsers
+from ytmusicdl.parsers import Parser
 import ytmusicdl.template as template
 import ytmusicdl.url as url
 import ytmusicdl.utils as utils
@@ -24,6 +24,7 @@ class YTMusicDL:
     log: logging.Logger
     ytmusic: YTMusic
     print_complete_message: bool = True
+    parser: Parser
 
     def __init__(self, config: Config = None):
         """Create a new YTMusicDL object"""
@@ -79,7 +80,7 @@ class YTMusicDL:
         # Spawn a ytmusicapi object with or without authentification headers
         self.ytmusic = YTMusic(auth=self.config["auth_file"])
 
-        return
+        self.parser = Parser(self.config)
 
     def find_audio_counterpart(self, song: Song, album: Album | None = None) -> str:
         """Find the audio counterpart of a music video song\n
@@ -176,7 +177,7 @@ class YTMusicDL:
             album = self.album_data_cache[browse_id]
         else:
             # Parse raw data from API
-            album = parsers.parse_album_data_list(data, browse_id)
+            album = self.parser.parse_album_data_list(data, browse_id)
 
             album["source"] = source
             if playlist_id:
@@ -215,7 +216,7 @@ class YTMusicDL:
 
         self.last_raw_data = data = self.ytmusic.get_watch_playlist(id, limit=2)
 
-        song = parsers.parse_track_song(data["tracks"][0])
+        song = self.parser.parse_track_song(data["tracks"][0])
         song["source"] = source
 
         return song
@@ -236,7 +237,7 @@ class YTMusicDL:
         else:
             # Try to find the song in the album song list by track name
             # Unlikely to reach this point
-            parsers.find_song_in_albumlist(song)
+            self.parser.find_song_in_albumlist(song)
 
         return song
 
@@ -249,7 +250,7 @@ class YTMusicDL:
             source["id"], limit=self.config["playlist_limit"]
         )
 
-        playlist = parsers.parse_playlist(data, source["id"])
+        playlist = self.parser.parse_playlist_data(data)
         playlist["source"] = source
 
         return playlist
