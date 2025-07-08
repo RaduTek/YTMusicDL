@@ -6,9 +6,7 @@ from mutagen.oggopus import OggOpus
 
 def __embed_aac(file: str, song: Song, config: Config):
     imageformat = (
-        MP4Cover.FORMAT_PNG
-        if config.cover_format == "png"
-        else MP4Cover.FORMAT_JPEG
+        MP4Cover.FORMAT_PNG if config["cover_format"] == "png" else MP4Cover.FORMAT_JPEG
     )
 
     audio = MP4(file)
@@ -34,7 +32,7 @@ def __embed_aac(file: str, song: Song, config: Config):
             audio["aART"] = [artist["name"] for artist in album["artists"]]
         if "total" in album:
             audio["trkn"] = [(song["index"], album["total"])]
-        
+
         if "cover_data" in album:
             audio["covr"] = [MP4Cover(album["cover_data"], imageformat=imageformat)]
 
@@ -53,9 +51,9 @@ def __embed_opus(file: str, song: Song, config: Config):
 
 
 def embed_metadata(file: str, song: Song, config: Config):
-    if config.format == "m4a":
+    if config["format"] == "m4a":
         __embed_aac(file, song, config)
-    elif config.format == "opus":
+    elif config["format"] == "opus":
         __embed_opus(file, song, config)
     else:
         raise ValueError("Invalid audio format specified in config")
