@@ -302,6 +302,9 @@ class YTMusicDL:
                 dl_song = Song(**song)
                 dl_song["album"] = album
                 self.download_song(dl_song)
+            except KeyboardInterrupt:
+                self.log.info("Download interrupted by user.")
+                break
             except Exception as e:
                 self.log.error(
                     f"Failed to download song: {utils.sourceable_str(dl_song)}"
@@ -355,6 +358,9 @@ class YTMusicDL:
         for source in sources:
             try:
                 self.download(source)
+            except KeyboardInterrupt:
+                self.log.info("Download interrupted by user.")
+                break
             except Exception as e:
                 self.log.error(f"Failed to download source: {source}")
                 if "ERROR" not in str(e):
