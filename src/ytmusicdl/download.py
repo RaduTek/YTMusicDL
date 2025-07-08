@@ -61,7 +61,7 @@ class Downloader:
         format = self.config["format"]
         output_path = output_path.replace(f".{format}", "")
 
-        ytdlp_opts = self.generate_ytdlp_opts(config, output_path)
+        ytdlp_opts = self.generate_ytdlp_opts(output_path)
 
         with YoutubeDL(ytdlp_opts) as ytdlp:
             status = ytdlp.download([song["source"]["url"]])
