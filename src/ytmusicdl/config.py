@@ -13,6 +13,7 @@ class Config(TypedDict, total=False):
 
     output_template: str
     cover_format: CoverFormat
+    cover_size: int
     write_cover: bool
     write_lyrics: bool
     no_lyrics: bool
@@ -52,6 +53,7 @@ def default_config() -> Config:
         "skip_already_archive_message": False,
         "output_template": "{song_title} - {song_artist} [{song_id}].{ext}",
         "cover_format": "jpg",
+        "cover_size": 500,
         "write_cover": False,
         "write_lyrics": False,
         "no_lyrics": False,
