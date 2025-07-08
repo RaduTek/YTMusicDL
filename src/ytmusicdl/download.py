@@ -31,14 +31,14 @@ def generate_ytdlp_opts(config: Config, output_path: str) -> dict:
     output_path = output_path.replace("{ext}", "%(ext)s")
 
     ytdlp_opts = {
-        "format": ytdlp_format_map[config.format][config.quality],
+        "format": ytdlp_format_map[config["format"]][config["quality"]],
         "extractaudio": True,
-        "quiet": config.supress_ytdlp_output,
+        "quiet": config["supress_ytdlp_output"],
         "outtmpl": output_path,
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
-                "preferredcodec": config.format,
+                "preferredcodec": config["format"],
             }
         ],
     }
@@ -53,7 +53,8 @@ def download_audio(song: Song, output_path: str, config: Config):
 
     log.debug(f"Downloading {song['title']} to {output_path}")
 
-    output_path = output_path.replace(f".{config.format}", "")
+    format = config["format"]
+    output_path = output_path.replace(f".{format}", "")
 
     ytdlp_opts = generate_ytdlp_opts(config, output_path)
 
@@ -76,14 +77,14 @@ def download_cover(sourceable: Sourceable, config: Config):
         log.debug(f"Cover already downloaded for {utils.sourceable_str(sourceable)}")
         return
 
+    cover_format = config["cover_format"]
     log.debug(
-        f"Downloading cover for {utils.sourceable_str(sourceable)} in format {config.cover_format}"
+        f"Downloading cover for {utils.sourceable_str(sourceable)} in format {cover_format}"
     )
 
     cover_url = sourceable["cover"]
     cover_data = requests.get(cover_url).content
 
-    cover_format = config.cover_format
     if cover_format not in ["png", "jpg"]:
         raise ValueError("Invalid cover format specified in config")
 

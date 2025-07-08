@@ -9,7 +9,7 @@ import ytmusicdl.template as template
 import ytmusicdl.url as url
 import ytmusicdl.utils as utils
 from ytmusicdl.types import *
-from ytmusicdl.config import Config
+from ytmusicdl.config import Config, default_config
 from ytmusicdl.metadata import embed_metadata
 
 __version__ = "2.0.0a0"
@@ -25,31 +25,39 @@ class YTMusicDL:
     ytmusic: YTMusic
     print_complete_message: bool = True
 
-    def __init__(self, config: Config = Config()):
+    def __init__(self, config: Config = None):
         """Create a new YTMusicDL object"""
 
         # Load default configuration
-        self.config = config
+        self.config = default_config()
 
+        # Update configuration with provided values
+        if config is not None:
+            self.config.update(config)
+
+        # Set up logger
         self.log = logging.getLogger("YTMusicDL")
         self.log.propagate = False
         self.log.setLevel(
             logging.DEBUG
-            if self.config.log_verbose or self.config.verbose
+            if self.config["log_verbose"] or self.config["verbose"]
             else logging.INFO
         )
 
         # Configure logger to show info messages on stdout
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.DEBUG if self.config.verbose else logging.INFO)
+        console_handler.setLevel(
+            logging.DEBUG if self.config["verbose"] else logging.INFO
+        )
         console_formatter = logging.Formatter("%(levelname)s: %(message)s")
         console_handler.setFormatter(console_formatter)
         self.log.addHandler(console_handler)
 
         # Setup logging to file
-        if type(self.config.log) is str:
-            log_file = os.path.join(self.config.base_path, self.config.log)
-            log_level = logging.DEBUG if self.config.log_verbose else logging.INFO
+        if type(self.config["log"]) is str:
+            log_file = self.config["log"]
+            log_file = os.path.join(self.config["base_path"], log_file)
+            log_level = logging.DEBUG if self.config["log_verbose"] else logging.INFO
 
             os.makedirs(os.path.dirname(log_file), exist_ok=True)
             log_file_handler = logging.FileHandler(log_file)
@@ -62,12 +70,14 @@ class YTMusicDL:
 
         self.log.info(f"YTMusicDL version {__version__}")
 
-        if not os.path.isabs(self.config.base_path):
-            self.config.base_path = os.path.join(os.getcwd(), self.config.base_path)
-        self.log.debug(f"Base path: {self.config.base_path}")
+        if not os.path.isabs(self.config["base_path"]):
+            self.config["base_path"] = os.path.join(
+                os.getcwd(), self.config["base_path"]
+            )
+        self.log.debug(f"Base path: {self.config["base_path"]}")
 
         # Spawn a ytmusicapi object with or without authentification headers
-        self.ytmusic = YTMusic(auth=self.config.auth_headers)
+        self.ytmusic = YTMusic(auth=self.config["auth_file"])
 
         return
 
@@ -173,7 +183,7 @@ class YTMusicDL:
                 album["playlist_id"] = playlist_id
 
             # Replace video versions with audio versions
-            if self.config.album_song_instead_of_video:
+            if self.config["album_song_instead_of_video"]:
                 self.__get_album_audio_counterparts(album)
 
             # Add album to cache, so it won't need to be loaded from the server again
@@ -236,7 +246,7 @@ class YTMusicDL:
         source = url.get_source(source, "playlist")
 
         self.last_raw_data = data = self.ytmusic.get_playlist(
-            source["id"], limit=self.config.playlist_limit
+            source["id"], limit=self.config["playlist_limit"]
         )
 
         playlist = parsers.parse_playlist(data, source["id"])
@@ -249,7 +259,7 @@ class YTMusicDL:
 
         if not isinstance(song, dict) and "title" not in song:
             source = url.get_source(song)
-            if self.config.song_full_metadata:
+            if self.config["song_full_metadata"]:
                 song = self.get_song_with_album(source)
             else:
                 song = self.get_song_info(source)
@@ -257,9 +267,9 @@ class YTMusicDL:
         self.log.info(f"Downloading song: {utils.sourceable_str(song)}...")
 
         output_file = template.parse_template(
-            self.config.output_template, song, self.config
+            self.config["output_template"], song, self.config
         )
-        output_path = os.path.join(self.config.base_path, output_file)
+        output_path = os.path.join(self.config["base_path"], output_file)
 
         if "album" in song and "cover" in song["album"]:
             download.download_cover(song["album"], self.config)
