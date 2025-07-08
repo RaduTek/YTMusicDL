@@ -1,4 +1,4 @@
-from typing import TypedDict, Literal
+from typing import TypedDict, Literal, NotRequired
 
 AudioFormat = Literal["opus", "m4a"]
 AudioQuality = Literal["medium", "high"]
@@ -25,8 +25,8 @@ class Sourceable(TypedDict):
     id: str
     title: str
     source: Source
-    cover: str
-    cover_data: bytes
+    cover: NotRequired[str]
+    cover_data: NotRequired[bytes]
 
 
 class Artist(TypedDict):
