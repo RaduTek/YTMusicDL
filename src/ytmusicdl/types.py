@@ -57,6 +57,7 @@ class Song(Sourceable):
     album: Album
     playlist: dict
     playlist_index: int
+    metadataFull: NotRequired[bool]
 
 
 SongList = dict[str, Song]
