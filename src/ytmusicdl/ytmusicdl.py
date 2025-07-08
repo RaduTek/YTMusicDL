@@ -320,14 +320,33 @@ class YTMusicDL:
 
     def download_playlist(self, playlist: PlayList | Source | str):
         """Download all songs in a playlist"""
-        raise NotImplementedError("Playlist download not implemented yet")
-
-        # Get playlist metadata
+        if not isinstance(playlist, dict) or "title" not in playlist:
+            source = url.get_source(playlist, "playlist")
+            playlist = self.get_playlist_info(source)
 
         old_value = self.print_complete_message
         self.print_complete_message = False
 
-        # Perform download here
+        self.log.info(f"Downloading playlist: {utils.sourceable_str(playlist)}...")
+
+        for song in dict(playlist["songs"]).values():
+            try:
+                dl_song = Song(**song)
+                dl_song["playlist"] = playlist
+                dl_song["source"] = url.get_source(dl_song["id"])
+                dl_song["playlist_index"] = dl_song.get("index", 0)
+
+                # Download the song
+                self.download_song(dl_song)
+            except KeyboardInterrupt:
+                self.log.info("Download interrupted by user.")
+                break
+            except Exception as e:
+                self.log.error(f"Failed to download song: {utils.sourceable_str(song)}")
+                if "ERROR" not in str(e):
+                    self.log.error(e)
+                self.log.debug(traceback.format_exc())
+                continue
 
         self.print_complete_message = old_value
         if self.print_complete_message:
