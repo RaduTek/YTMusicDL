@@ -8,16 +8,16 @@ def get_template_key(key: str, song: Song, config: Config) -> str:
     """Get a key from the song data"""
 
     if key == "ext":
-        return config.format
+        return config["format"]
 
     elif key in ["date_time", "datetime"]:
-        return datetime.now().strftime(config.datetime_format)
+        return datetime.now().strftime(config["datetime_format"])
 
     elif key == "date":
-        return datetime.now().strftime(config.date_format)
+        return datetime.now().strftime(config["date_format"])
 
     elif key == "time":
-        return datetime.now().strftime(config.time_format)
+        return datetime.now().strftime(config["time_format"])
 
     elif key.startswith("song_"):
         key = key[5:]
@@ -25,7 +25,7 @@ def get_template_key(key: str, song: Song, config: Config) -> str:
         if key == "artist":
             return song["artists"][0]["name"]
         elif key == "artists":
-            return config.artist_separator.join(
+            return config["artist_separator"].join(
                 [artist["name"] for artist in song["artists"]]
             )
         return str(song[key])
@@ -38,7 +38,7 @@ def get_template_key(key: str, song: Song, config: Config) -> str:
         if key == "artist":
             return song["artists"][0]["name"]
         elif key == "artists":
-            return config.artist_separator.join(
+            return config["artist_separator"].join(
                 [artist["name"] for artist in song["album"]["artists"]]
             )
 
@@ -111,7 +111,7 @@ def parse_template(template: str, song: Song, config: Config) -> str:
             return ""
 
         # No matching key found, return placeholder
-        return config.unknown_placeholder
+        return config["unknown_placeholder"]
 
     pattern = r"\{([^{}]+)\}?"
     return re.sub(pattern, replace_key, template)
