@@ -110,7 +110,7 @@ def get_playlist_items(playlist_url: str) -> list[Sourceable]:
 
     with YoutubeDL(ytdlp_opts) as ydl:
         info = ydl.extract_info(playlist_url, download=False)
-        if "entries" in info:
+        if type(info) == dict and "entries" in info:
             entries = info["entries"]
             videos = []
 

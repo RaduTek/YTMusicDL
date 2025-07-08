@@ -20,7 +20,7 @@ class YTMusicDL:
 
     album_data_cache: dict = {}
     config: Config
-    last_raw_data: dict[str, AlbumList] = None
+    last_raw_data = None
     log: logging.Logger
     ytmusic: YTMusic
     print_complete_message: bool = True
@@ -257,7 +257,7 @@ class YTMusicDL:
     def download_song(self, song: Song | Source | str):
         """Download a song from a source to the output path"""
 
-        if not isinstance(song, dict) and "title" not in song:
+        if not isinstance(song, dict) or "title" not in song:
             source = url.get_source(song)
             if self.config["song_full_metadata"]:
                 song = self.get_song_with_album(source)
@@ -286,8 +286,9 @@ class YTMusicDL:
     def download_album(self, album: AlbumList | Source | str):
         """Download all songs in an album"""
 
-        if type(album) is not AlbumList:
-            album = self.get_album_list(album)
+        if not isinstance(album, dict) or "title" not in album:
+            source = url.get_source(album, "album")
+            album = self.get_album_list(source)
 
         self.log.info(f"Downloading album: {utils.sourceable_str(album)}...")
         self.log.debug(f"Album data: {album}")
