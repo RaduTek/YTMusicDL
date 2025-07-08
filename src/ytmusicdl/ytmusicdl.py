@@ -230,6 +230,7 @@ class YTMusicDL:
 
         song = self.parser.parse_track_song(data["tracks"][0])
         song["source"] = source
+        song["metadataFull"] = False
 
         return song
 
@@ -256,6 +257,7 @@ class YTMusicDL:
             # Unlikely to reach this point
             self.parser.find_song_in_albumlist(song)
 
+        song["metadataFull"] = True
         return song
 
     def get_playlist_info(self, source: Source | str) -> PlayList:
@@ -281,6 +283,10 @@ class YTMusicDL:
                 song = self.get_song_with_album(source)
             else:
                 song = self.get_song_info(source)
+
+        if self.config["song_full_metadata"] and not song.get("metadataFull", False):
+            song_extra = self.get_song_with_album(song["source"])
+            song.update(song_extra)
 
         self.log.info(f"Downloading song: {utils.sourceable_str(song)}...")
 
@@ -339,6 +345,8 @@ class YTMusicDL:
         """Download all songs in a playlist"""
         if not isinstance(playlist, dict) or "title" not in playlist:
             source = url.get_source(playlist, "playlist")
+
+            self.log.info(f"Loading playlist info...")
             playlist = self.get_playlist_info(source)
 
         old_value = self.print_complete_message

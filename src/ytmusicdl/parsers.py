@@ -137,6 +137,7 @@ class Parser:
                 try:
                     song = self.parse_track_song(song_data)
                     song["source"] = url.get_source(song["id"])
+                    song["metadataFull"] = True
                     album_list["songs"][song["id"]] = song
                 except Exception as e:
                     song_txt = "unknown song"
