@@ -144,6 +144,12 @@ class YTMusicDL:
         updated_songs = {}
 
         for idx, song in enumerate(album["songs"].values()):
+            if not song["id"] or not song["source"]:
+                # If song does not have an ID or source, skip it
+                self.log.warning(
+                    f"Skipping song '{song["title"]}' with missing ID or source."
+                )
+                continue
             if song["type"] == "audio":
                 updated_songs[song["id"]] = song
                 continue
@@ -215,6 +221,8 @@ class YTMusicDL:
     def get_song_info(self, source: Source | str) -> Song:
         """Get metadata for song source"""
 
+        self.log.debug(f"Fetching song info for source: {source}")
+
         source = url.get_source(source)
         id = source["id"]
 
@@ -228,7 +236,12 @@ class YTMusicDL:
     def get_song_with_album(self, source: Source | str) -> Song:
         """Get metadata for song source, including album data and song index"""
 
+        self.log.debug(f"Fetching song info with album data for source: {source}")
+
         song = self.get_song_info(source)
+
+        if "album" not in song:
+            return song
 
         album_id = song["album"]["id"]
         album = self.get_album_list(album_id)
