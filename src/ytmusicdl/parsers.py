@@ -69,7 +69,9 @@ class Parser:
 
         song["id"] = data["videoId"]
         song["title"] = data["title"]
-        song["type"] = song_types[data["videoType"]]
+
+        if "videoType" in data and data["videoType"] in song_types:
+            song["type"] = song_types[data["videoType"]]
 
         if "thumbnail" in data and data["thumbnail"]:
             # Response from watch playlist
