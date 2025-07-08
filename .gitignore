@@ -26,6 +26,7 @@ batch.txt
 *.mp3
 *.flac
 *.wav
+*.part
 
 # Other
 ytmusicdl_original.py
