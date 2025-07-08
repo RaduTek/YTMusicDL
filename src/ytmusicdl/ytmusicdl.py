@@ -3,7 +3,7 @@ import os
 import logging
 import traceback
 from ytmusicapi import YTMusic
-import ytmusicdl.download as download
+from ytmusicdl.download import Downloader
 from ytmusicdl.parsers import Parser
 import ytmusicdl.template as template
 import ytmusicdl.url as url
@@ -24,7 +24,10 @@ class YTMusicDL:
     log: logging.Logger
     ytmusic: YTMusic
     print_complete_message: bool = True
+
+    # Components
     parser: Parser
+    downloader: Downloader
 
     def __init__(self, config: Config = None):
         """Create a new YTMusicDL object"""
@@ -81,6 +84,7 @@ class YTMusicDL:
         self.ytmusic = YTMusic(auth=self.config["auth_file"])
 
         self.parser = Parser(self.config)
+        self.downloader = Downloader(self.config)
 
     def find_audio_counterpart(self, song: Song, album: Album | None = None) -> str:
         """Find the audio counterpart of a music video song\n
@@ -133,7 +137,7 @@ class YTMusicDL:
         if all(song["type"] == "audio" for song in album["songs"].values()):
             return
 
-        items = download.get_playlist_items(
+        items = self.downloader.get_playlist_items(
             f"https://youtube.com/playlist?list={album['playlist_id']}"
         )
 
@@ -273,11 +277,11 @@ class YTMusicDL:
         output_path = os.path.join(self.config["base_path"], output_file)
 
         if "album" in song and "cover" in song["album"]:
-            download.download_cover(song["album"], self.config)
+            self.downloader.download_cover(song["album"])
         elif "cover" in song:
-            download.download_cover(song, self.config)
+            self.downloader.download_cover(song)
 
-        download.download_audio(song, output_path, self.config)
+        self.downloader.download_audio(song, output_path)
 
         embed_metadata(output_path, song, self.config)
 
