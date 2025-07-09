@@ -5,6 +5,7 @@ from PIL import Image
 from yt_dlp import YoutubeDL
 from ytmusicdl.types import Song, Sourceable
 from ytmusicdl.config import Config
+from ytmusicdl.logger import get_logger
 from ytmusicdl.types import AudioFormat, AudioQuality
 import ytmusicdl.url as url
 import ytmusicdl.utils as utils
@@ -26,7 +27,7 @@ class Downloader:
     """Downloader class to handle audio downloads and cover art retrieval"""
 
     config: Config
-    log = logging.getLogger("YTMusicDL")
+    log = get_logger()
 
     def __init__(self, config: Config):
         self.config = config
@@ -40,6 +41,8 @@ class Downloader:
             "format": ytdlp_format_map[self.config["format"]][self.config["quality"]],
             "extractaudio": True,
             "quiet": self.config["supress_ytdlp_output"],
+            "no_warnings": self.config["supress_ytdlp_output"],
+            "noprogress": self.config["supress_ytdlp_output"],
             "outtmpl": output_path,
             "postprocessors": [
                 {
@@ -109,6 +112,8 @@ class Downloader:
     def get_playlist_items(self, playlist_url: str) -> list[Sourceable]:
         ytdlp_opts = {
             "quiet": True,
+            "no_warnings": True,
+            "noprogress": True,
             "extract_flat": True,
             "skip_download": True,
         }

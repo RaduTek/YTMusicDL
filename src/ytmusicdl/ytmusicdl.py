@@ -1,6 +1,6 @@
 import copy
-import os
 import logging
+import os
 import traceback
 from ytmusicapi import YTMusic
 from ytmusicdl.download import Downloader
@@ -8,6 +8,7 @@ from ytmusicdl.parsers import Parser
 import ytmusicdl.template as template
 import ytmusicdl.url as url
 import ytmusicdl.utils as utils
+from ytmusicdl.logger import init_logger, CustomLogger
 from ytmusicdl.types import *
 from ytmusicdl.config import Config, default_config
 from ytmusicdl.metadata import embed_metadata
@@ -21,7 +22,7 @@ class YTMusicDL:
     album_data_cache: dict = {}
     config: Config
     last_raw_data = None
-    log: logging.Logger
+    log: CustomLogger
     ytmusic: YTMusic
     print_complete_message: bool = True
 
@@ -40,38 +41,7 @@ class YTMusicDL:
             self.config.update(config)
 
         # Set up logger
-        self.log = logging.getLogger("YTMusicDL")
-        self.log.propagate = False
-        self.log.setLevel(
-            logging.DEBUG
-            if self.config["log_verbose"] or self.config["verbose"]
-            else logging.INFO
-        )
-
-        # Configure logger to show info messages on stdout
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(
-            logging.DEBUG if self.config["verbose"] else logging.INFO
-        )
-        console_formatter = logging.Formatter("%(levelname)s: %(message)s")
-        console_handler.setFormatter(console_formatter)
-        self.log.addHandler(console_handler)
-
-        # Setup logging to file
-        if type(self.config["log"]) is str:
-            log_file = self.config["log"]
-            log_file = os.path.join(self.config["base_path"], log_file)
-            log_level = logging.DEBUG if self.config["log_verbose"] else logging.INFO
-
-            os.makedirs(os.path.dirname(log_file), exist_ok=True)
-            log_file_handler = logging.FileHandler(log_file)
-            log_file_handler.setLevel(log_level)
-            log_file_formatter = logging.Formatter(
-                "%(asctime)s: %(levelname)s: %(message)s"
-            )
-            log_file_handler.setFormatter(log_file_formatter)
-            self.log.addHandler(log_file_handler)
-
+        self.log = init_logger(self.config)
         self.log.info(f"YTMusicDL version {__version__}")
 
         if not os.path.isabs(self.config["base_path"]):
@@ -279,6 +249,8 @@ class YTMusicDL:
 
         if not isinstance(song, dict) or "title" not in song:
             source = url.get_source(song)
+
+            self.log.status("Loading song info...")
             if self.config["song_full_metadata"]:
                 song = self.get_song_with_album(source)
             else:
@@ -288,7 +260,7 @@ class YTMusicDL:
             song_extra = self.get_song_with_album(song["source"])
             song.update(song_extra)
 
-        self.log.info(f"Downloading song: {utils.sourceable_str(song)}...")
+        self.log.status(f"Downloading song: {utils.sourceable_str(song)}...")
 
         output_file = template.parse_template(
             self.config["output_template"], song, self.config
@@ -304,21 +276,27 @@ class YTMusicDL:
 
         embed_metadata(output_path, song, self.config)
 
-        if self.print_complete_message:
-            self.log.info("Download complete!")
+        self.log.success(f"Downloaded {utils.sourceable_str(song)}")
 
     def download_album(self, album: AlbumList | Source | str):
         """Download all songs in an album"""
 
         if not isinstance(album, dict) or "title" not in album:
-            source = url.get_source(album, "album")
+            try:
+                source = url.get_source(album, "album")
+            except ValueError:
+                try:
+                    source = url.get_source(album, "playlist")
+                except ValueError:
+                    raise ValueError(
+                        f"Invalid source type for album: {album}. Expected 'album' or 'playlist'."
+                    )
+
+            self.log.status("Loading album info...")
             album = self.get_album_list(source)
 
-        self.log.info(f"Downloading album: {utils.sourceable_str(album)}...")
+        self.log.status(f"Downloading album: {utils.sourceable_str(album)}...")
         self.log.debug(f"Album data: {album}")
-
-        old_value = self.print_complete_message
-        self.print_complete_message = False
 
         for song in album["songs"].values():
             try:
@@ -326,7 +304,7 @@ class YTMusicDL:
                 dl_song["album"] = album
                 self.download_song(dl_song)
             except KeyboardInterrupt:
-                self.log.info("Download interrupted by user.")
+                self.log.warning("Download interrupted by user.")
                 break
             except Exception as e:
                 self.log.error(
@@ -337,20 +315,15 @@ class YTMusicDL:
                 self.log.debug(traceback.format_exc())
                 continue
 
-        self.print_complete_message = old_value
-        if self.print_complete_message:
-            self.log.info("Download complete!")
+        self.log.success(f"Downloaded album: {utils.sourceable_str(album)}")
 
     def download_playlist(self, playlist: PlayList | Source | str):
         """Download all songs in a playlist"""
         if not isinstance(playlist, dict) or "title" not in playlist:
             source = url.get_source(playlist, "playlist")
 
-            self.log.info(f"Loading playlist info...")
+            self.log.status(f"Loading playlist info...")
             playlist = self.get_playlist_info(source)
-
-        old_value = self.print_complete_message
-        self.print_complete_message = False
 
         self.log.info(f"Downloading playlist: {utils.sourceable_str(playlist)}...")
 
@@ -364,7 +337,7 @@ class YTMusicDL:
                 # Download the song
                 self.download_song(dl_song)
             except KeyboardInterrupt:
-                self.log.info("Download interrupted by user.")
+                self.log.warning("Download interrupted by user.")
                 break
             except Exception as e:
                 self.log.error(f"Failed to download song: {utils.sourceable_str(song)}")
@@ -373,9 +346,7 @@ class YTMusicDL:
                 self.log.debug(traceback.format_exc())
                 continue
 
-        self.print_complete_message = old_value
-        if self.print_complete_message:
-            self.log.info("Download complete!")
+        self.log.success(f"Downloaded playlist: {utils.sourceable_str(playlist)}")
 
     def download(self, source: Source | str):
         """Download from a source"""
@@ -396,14 +367,11 @@ class YTMusicDL:
     def download_many(self, sources: list[Source | str]):
         """Download from multiple sources"""
 
-        old_value = self.print_complete_message
-        self.print_complete_message = False
-
         for source in sources:
             try:
                 self.download(source)
             except KeyboardInterrupt:
-                self.log.info("Download interrupted by user.")
+                self.log.warning("Download interrupted by user.")
                 break
             except Exception as e:
                 self.log.error(f"Failed to download source: {source}")
@@ -412,6 +380,4 @@ class YTMusicDL:
                 self.log.debug(traceback.format_exc())
                 continue
 
-        self.print_complete_message = old_value
-        if self.print_complete_message:
-            self.log.info("Download complete!")
+        self.log.success("Download complete!")

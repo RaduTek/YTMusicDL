@@ -22,6 +22,7 @@ class Config(TypedDict, total=False):
     download_limit: int
     playlist_limit: int
     verbose: bool
+    emojis: bool
     log: str | None
     log_verbose: bool
 
@@ -61,6 +62,7 @@ def default_config() -> Config:
         "skip_download": False,
         "download_limit": 0,
         "playlist_limit": 5000,
+        "emojis": True,
         "verbose": False,
         "log": None,
         "log_verbose": True,
