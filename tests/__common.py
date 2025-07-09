@@ -5,6 +5,7 @@ out_dir = "tests/results"
 
 
 def set_out_dir(dir: str):
+    global out_dir
     try:
         os.mkdir(dir)
         out_dir = dir

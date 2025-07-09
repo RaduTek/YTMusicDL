@@ -9,7 +9,7 @@ config = Config()
 # List of templates to test
 templates = [
     # Default template from config
-    config.output_template,
+    config["output_template"],
     # Default template
     "{song_title} - {song_artist} [{song_id}].{ext}",
     # Multiple artists merged with separator
