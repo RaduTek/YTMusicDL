@@ -1,4 +1,0 @@
-mutagen
-Pillow
-yt-dlp
-ytmusicapi

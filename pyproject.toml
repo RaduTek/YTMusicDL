@@ -12,10 +12,19 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "yt-dlp>=2024.01.01",
+    "ytmusicapi>=0.30.0",
+    "mutagen>=1.45.1",
+    "Pillow>=10.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/RaduTek/YTMusicDL"
 Issues = "https://github.com/RaduTek/YTMusicDL/issues"
+
+[project.scripts]
+ytmusicdl = "ytmusicdl.cli:main"
 
 [build-system]
 requires = ["hatchling"]
