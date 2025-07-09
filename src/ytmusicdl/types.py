@@ -1,9 +1,16 @@
-from typing import TypedDict, Literal, NotRequired
+from typing import TypedDict, Literal, NotRequired, get_args
 
 AudioFormat = Literal["opus", "m4a"]
+audio_formats = list(get_args(AudioFormat))
+
 AudioQuality = Literal["medium", "high"]
+audio_qualities = list(get_args(AudioQuality))
+
 CoverFormat = Literal["png", "jpg"]
+cover_formats = list(get_args(CoverFormat))
+
 SongType = Literal["audio", "video"]
+
 UrlType = Literal["watch", "playlist", "album", "artist", "library"]
 
 song_types: dict[str, SongType] = {
