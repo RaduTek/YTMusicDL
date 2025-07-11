@@ -2,6 +2,7 @@ import copy
 import logging
 import os
 import traceback
+from importlib.metadata import version
 from ytmusicapi import YTMusic
 from ytmusicdl.download import Downloader
 from ytmusicdl.parsers import Parser
@@ -13,7 +14,7 @@ from ytmusicdl.types import *
 from ytmusicdl.config import Config, default_config, validate_config
 from ytmusicdl.metadata import embed_metadata
 
-__version__ = "2.0.0a0"
+__version__ = version("ytmusicdl")
 
 
 class YTMusicDL:
