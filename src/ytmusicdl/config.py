@@ -3,6 +3,8 @@ from typing import TypedDict
 
 
 class Config(TypedDict, total=False):
+    """Configuration settings for YTMusicDL."""
+
     base_path: str
     format: AudioFormat
     quality: AudioQuality
@@ -16,6 +18,7 @@ class Config(TypedDict, total=False):
     cover_size: int
     write_cover: bool
     write_lyrics: bool
+    write_playlist_file: bool
     no_lyrics: bool
     skip_existing: bool
     skip_download: bool
@@ -45,6 +48,8 @@ class Config(TypedDict, total=False):
 
 
 def default_config() -> Config:
+    """Return a dictionary with default configuration settings."""
+
     return {
         "base_path": "",
         "format": "m4a",
@@ -57,6 +62,7 @@ def default_config() -> Config:
         "cover_size": 500,
         "write_cover": False,
         "write_lyrics": False,
+        "write_playlist_file": True,
         "no_lyrics": False,
         "skip_existing": True,
         "skip_download": False,
@@ -80,3 +86,21 @@ def default_config() -> Config:
         "datetime_format": "%d-%m-%Y %H-%M-%S",
         "unknown_placeholder": "Unknown",
     }
+
+
+def validate_config(config: Config) -> None:
+    """Validate the configuration settings."""
+
+    if config["archive_file"] and not config["archive_file"].endswith(".json"):
+        raise ValueError("Archive file must be a JSON file.")
+
+    if config["auth_file"] and not config["auth_file"].endswith(".json"):
+        raise ValueError("Auth file must be a JSON file.")
+
+    if config["quality"] == "high" and not config["auth_file"]:
+        raise ValueError(
+            "High quality requires authentication. Please provide an auth file."
+        )
+
+    if config["cover_size"] < 50:
+        raise ValueError("Cover size must be a positive integer >= 50.")

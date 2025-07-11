@@ -10,7 +10,7 @@ import ytmusicdl.url as url
 import ytmusicdl.utils as utils
 from ytmusicdl.logger import init_logger, CustomLogger
 from ytmusicdl.types import *
-from ytmusicdl.config import Config, default_config
+from ytmusicdl.config import Config, default_config, validate_config
 from ytmusicdl.metadata import embed_metadata
 
 __version__ = "2.0.0a0"
@@ -39,6 +39,9 @@ class YTMusicDL:
         # Update configuration with provided values
         if config is not None:
             self.config.update(config)
+
+        # Validate configuration
+        validate_config(self.config)
 
         # Set up logger
         self.log = init_logger(self.config)
