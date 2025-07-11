@@ -357,7 +357,7 @@ class YTMusicDL:
             "subtype" in source and source["subtype"] == "album"
         ):
             self.download_album(source)
-        elif source["type"] == "song":
+        elif source["type"] == "watch":
             self.download_song(source)
         elif source["type"] == "playlist":
             self.download_playlist(source)
