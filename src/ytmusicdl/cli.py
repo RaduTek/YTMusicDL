@@ -1,6 +1,7 @@
 import argparse
+import sys
 from ytmusicdl import YTMusicDL
-from ytmusicdl.config import Config, default_config
+from ytmusicdl.config import default_config, validate_config
 from ytmusicdl.types import audio_formats, audio_qualities, cover_formats
 
 
@@ -11,13 +12,29 @@ class SmartFormatter(argparse.HelpFormatter):
         return argparse.HelpFormatter._split_lines(self, text, width)
 
 
+class CustomArgumentParser(argparse.ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, formatter_class=SmartFormatter, **kwargs)
+
+    def print_usage(self, file=None):
+        if file is None:
+            file = sys.stderr
+        # Add emoji and custom prefix
+        file.write("📖 ")
+        super().print_usage(file)
+
+    def error(self, message):
+        self.print_usage(sys.stderr)
+        sys.stderr.write(f"\n❌ {message}\n")
+        sys.exit(2)
+
+
 def main():
     config = default_config()
 
-    parser = argparse.ArgumentParser(
+    parser = CustomArgumentParser(
         prog="ytmusicdl",
         description="Download music from YouTube Music using YTMusicDL.",
-        formatter_class=SmartFormatter,
     )
     parser.add_argument(
         "urls", metavar="URL", type=str, nargs="+", help="List of URL(s) to download"
@@ -43,7 +60,14 @@ def main():
         type=str.lower,
         default=config["quality"],
         choices=audio_qualities,
-        help="Audio quality",
+        help=f"Audio quality (default: {config["quality"]})",
+    )
+    parser.add_argument(
+        "-a",
+        "--archive-file",
+        type=str,
+        default=config["archive_file"],
+        help="Path to the archive file to keep track of downloaded items",
     )
     parser.add_argument(
         "--auth-file",
@@ -70,15 +94,24 @@ def main():
     # )
 
     args = parser.parse_args()
+    config.update(args.__dict__)
 
-    print(args)
+    try:
+        validate_config(config)
+    except ValueError as e:
+        print(f"❌ Configuration error: {e}", file=sys.stderr)
+        return
 
-    # config = Config.from_file(args.config)
-    # ytmusicdl = YTMusicDL(config)
+    try:
+        ytmusicdl = YTMusicDL(config)
+    except Exception as e:
+        print("❌ Error initializing YTMusicDL:", e, file=sys.stderr)
+        return
 
-    # if "playlist" in args.url:
-    #     ytmusicdl.download_playlist(args.url)
-    # elif "watch" in args.url:
-    #     ytmusicdl.download_song(args.url)
-    # else:
-    #     ytmusicdl.download_album(args.url)
+    log = ytmusicdl.log
+
+    try:
+        ytmusicdl.download_many(args.urls)
+    except Exception as e:
+        log.error("❌ Error during download: %s", e)
+        return
