@@ -53,7 +53,7 @@ def default_config() -> Config:
     return {
         "base_path": "",
         "format": "m4a",
-        "quality": "high",
+        "quality": "medium",
         "auth_file": None,
         "archive_file": None,
         "skip_already_archive_message": False,
