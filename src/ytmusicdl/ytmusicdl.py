@@ -9,7 +9,7 @@ from ytmusicdl.parsers import Parser
 import ytmusicdl.template as template
 import ytmusicdl.url as url
 import ytmusicdl.utils as utils
-from ytmusicdl.logger import init_logger, CustomLogger
+from ytmusicdl.logger import init_logger, CustomLogger, print_stats
 from ytmusicdl.types import *
 from ytmusicdl.config import Config, default_config, validate_config
 from ytmusicdl.metadata import embed_metadata
@@ -320,8 +320,7 @@ class YTMusicDL:
                 dl_song["album"] = album
                 self.download_song(dl_song)
             except KeyboardInterrupt:
-                self.log.warning("Download interrupted by user.")
-                break
+                raise
             except Exception as e:
                 self.log.error(
                     f"Failed to download song: {utils.sourceable_str(dl_song)}"
@@ -353,12 +352,11 @@ class YTMusicDL:
                 # Download the song
                 self.download_song(dl_song)
             except KeyboardInterrupt:
-                self.log.warning("Download interrupted by user.")
-                break
+                raise
             except Exception as e:
-                self.log.error(f"Failed to download song: {utils.sourceable_str(song)}")
-                if "ERROR" not in str(e):
-                    self.log.error(e)
+                self.log.error(
+                    f"Failed to download song: {utils.sourceable_str(song)}\n{e}"
+                )
                 self.log.debug(traceback.format_exc())
                 continue
 
@@ -387,18 +385,17 @@ class YTMusicDL:
             self.log.warning("No sources provided for download.")
             return
 
-        for source in sources:
-            try:
-                self.download(source)
-            except KeyboardInterrupt:
-                self.log.warning("Download interrupted by user.")
-                break
-            except Exception as e:
-                self.log.error(f"Failed to download source: {source}")
-                if "ERROR" not in str(e):
-                    self.log.error(e)
-                self.log.debug(traceback.format_exc())
-                continue
+        try:
+            for source in sources:
+                try:
+                    self.download(source)
+                except KeyboardInterrupt:
+                    raise
+                except Exception as e:
+                    self.log.error(f"Failed to download source: {source}\n{e}")
+                    self.log.debug(traceback.format_exc())
+                    continue
+        except KeyboardInterrupt:
+            self.log.warning("Download interrupted by user.")
 
-        if len(sources) > 1:
-            self.log.success("Download complete!")
+        print_stats(print_success=len(sources) > 1)
