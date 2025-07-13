@@ -13,6 +13,7 @@ from ytmusicdl.types import *
 from ytmusicdl.config import Config, default_config, validate_config
 from ytmusicdl.metadata import embed_metadata
 from ytmusicdl.archive import Archive
+from ytmusicdl.m3ufile import write_playlist_file
 
 __version__ = version("ytmusicdl")
 
@@ -404,6 +405,18 @@ class YTMusicDL:
                 file_path=f"{playlist["title"]}.m3u8",
                 song_ids=downloaded_songs,
             )
+
+        # Write the playlist file
+        if self.config["write_playlist_file"]:
+            self.log.status("Writing playlist file...")
+            try:
+                archive_playlist = self.archive.get_playlist_with_songs(playlist["id"])
+                write_playlist_file(self.base_path, archive_playlist)
+            except Exception as e:
+                self.log.error(f"Failed to write playlist file: {e}")
+                self.log.debug(traceback.format_exc())
+            else:
+                self.log.success("Playlist file written successfully.")
 
         self.log.success(f"Downloaded playlist: {utils.sourceable_str(playlist)}")
 
