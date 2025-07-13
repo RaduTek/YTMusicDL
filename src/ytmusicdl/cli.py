@@ -52,6 +52,7 @@ def main():
         "--base-path",
         type=str,
         default=config["base_path"],
+        metavar="PATH",
         help="Base path for downloads (default: current directory)",
     )
     parser.add_argument(
@@ -72,9 +73,11 @@ def main():
     )
     parser.add_argument(
         "-a",
-        "--archive-file",
+        "--archive",
         type=str,
+        dest="archive_file",
         default=config["archive_file"],
+        metavar="FILE",
         help="Path to the archive file to keep track of downloaded items",
     )
     parser.add_argument(
@@ -89,6 +92,7 @@ def main():
         "--cover-size",
         type=int,
         default=config["cover_size"],
+        metavar="SIZE",
         help=f"Size of the cover image in pixels (default: {config['cover_size']})",
     )
     parser.add_argument(
@@ -98,15 +102,18 @@ def main():
         help="Path to the authentication file (refer to ytmusicapi documentation for generating this file)",
     )
     parser.add_argument(
-        "--cookies-file",
+        "--cookies",
         type=str,
+        dest="cookies_file",
         default=config["cookies_file"],
+        metavar="FILE",
         help="Path to the cookies file (used for yt-dlp audio download - check yt-dlp documentation for more info)",
     )
     parser.add_argument(
         "--cookies-from-browser",
         type=str,
         default=config["cookies_from_browser"],
+        metavar="BROWSER",
         help="Browser to extract cookies from (used for yt-dlp audio download - check yt-dlp documentation for more info)",
     )
     parser.add_argument(
@@ -114,6 +121,34 @@ def main():
         action="store_true",
         default=config["skip_download"],
         help="Skip the actual download, useful for testing or when you only want to generate metadata",
+    )
+    parser.add_argument(
+        "--overwrite-existing",
+        action="store_false",
+        dest="skip_existing",
+        default=config["skip_existing"],
+        help="Overwrite existing files if they already exist",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        default=config["verbose"],
+        help="Enable verbose output",
+    )
+    parser.add_argument(
+        "--log",
+        type=str,
+        dest="log",
+        default=config["log"],
+        metavar="FILE",
+        help="Path to the log file",
+    )
+    parser.add_argument(
+        "--log-verbose",
+        action="store_true",
+        default=config["log_verbose"],
+        help="Enable verbose output in the log file",
     )
 
     # parser.add_argument(
