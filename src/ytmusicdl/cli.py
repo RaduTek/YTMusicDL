@@ -5,6 +5,15 @@ from ytmusicdl.config import default_config, validate_config
 from ytmusicdl.types import audio_formats, audio_qualities, cover_formats
 
 
+def _format_error(message: str) -> str:
+    return f"❌ {message}"
+
+
+def _print_error(message: str):
+    """Print an error message to stderr."""
+    sys.stderr.write(f"{_format_error(message)}\n")
+
+
 class CustomHelpFormatter(argparse.HelpFormatter):
     def _split_lines(self, text, width):
         if text.startswith("R|"):
@@ -24,7 +33,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
 
     def error(self, message):
         self.print_usage(sys.stderr)
-        sys.stderr.write(f"\n❌ {message}\n")
+        sys.stderr.write(f"\n{_format_error(message)}\n")
         sys.exit(2)
 
 
@@ -117,19 +126,17 @@ def main():
     try:
         validate_config(config)
     except ValueError as e:
-        print(f"❌ Configuration error: {e}", file=sys.stderr)
+        _print_error(f"❌ Configuration error: {e}")
         return
 
     try:
         ytmusicdl = YTMusicDL(config)
     except Exception as e:
-        print("❌ Error initializing YTMusicDL:", e, file=sys.stderr)
+        _print_error(f"❌ Error initializing YTMusicDL: {e}")
         return
-
-    log = ytmusicdl.log
 
     try:
         ytmusicdl.download_many(args.urls)
     except Exception as e:
-        log.error("❌ Error during download: %s", e)
+        ytmusicdl.log.error("❌ Error during download: %s", e)
         return
