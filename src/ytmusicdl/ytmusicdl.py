@@ -2,6 +2,7 @@ import copy
 import os
 import traceback
 from importlib.metadata import version
+from pathlib import Path
 from ytmusicapi import YTMusic
 from ytmusicdl.download import Downloader
 from ytmusicdl.parsers import Parser
@@ -25,6 +26,7 @@ class YTMusicDL:
     log: CustomLogger
     ytmusic: YTMusic
     print_complete_message: bool = True
+    base_path: Path = Path(".")
 
     # Components
     parser: Parser
@@ -47,11 +49,8 @@ class YTMusicDL:
         self.log = init_logger(self.config)
         self.log.info(f"YTMusicDL version {__version__}")
 
-        if not os.path.isabs(self.config["base_path"]):
-            self.config["base_path"] = os.path.join(
-                os.getcwd(), self.config["base_path"]
-            )
-        self.log.debug(f"Base path: {self.config["base_path"]}")
+        self.base_path = Path(self.config["base_path"]).absolute()
+        self.log.debug(f"Base path: {self.base_path}")
 
         # Spawn a ytmusicapi object with or without authentification headers
         self.ytmusic = YTMusic(auth=self.config["auth_file"])
@@ -268,7 +267,16 @@ class YTMusicDL:
         output_file = template.parse_template(
             self.config["output_template"], song, self.config
         )
-        output_path = os.path.join(self.config["base_path"], output_file)
+        output_path = self.base_path / output_file
+
+        if output_path.exists():
+            if self.config["skip_existing"]:
+                self.log.info(
+                    f"File '{output_file}' already exists, skipping download."
+                )
+                return str(output_path)
+
+            self.log.warning(f"File '{output_file}' already exists, overwriting.")
 
         if self.config["skip_download"]:
             self.log.warning("Skipped audio download (--skip-download option enabled).")
@@ -278,12 +286,13 @@ class YTMusicDL:
             elif "cover" in song:
                 self.downloader.download_cover(song)
 
-            self.downloader.download_audio(song, output_path)
+            self.downloader.download_audio(song, str(output_path))
 
-            embed_metadata(output_path, song, self.config)
+            embed_metadata(str(output_path), song, self.config)
 
         self.log.success(f"Downloaded {utils.sourceable_str(song)}")
-        return output_path
+
+        return str(output_path)
 
     def download_album(self, album: AlbumList | Source | str):
         """Download all songs in an album"""
