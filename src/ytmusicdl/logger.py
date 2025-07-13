@@ -16,6 +16,8 @@ class CustomLogger(logging.getLoggerClass()):
         Log 'msg % args' with severity 'STATUS'.
         """
         if self.isEnabledFor(self.STATUS):
+            if self.getEffectiveLevel() <= logging.DEBUG:
+                msg = str(msg) + "\n"
             self._log(self.STATUS, msg, args, **kwargs)
 
     def success(self, msg: object, *args: object, **kwargs: object) -> None:
