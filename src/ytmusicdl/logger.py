@@ -67,6 +67,28 @@ class EmojiFormatter(logging.Formatter):
         return f"{emoji} {formatted_message}"
 
 
+class CountingHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.error_count = 0
+        self.warning_count = 0
+        self.success_count = 0
+
+    def emit(self, record):
+        if record.levelno == logging.ERROR:
+            self.error_count += 1
+        elif record.levelno == logging.WARNING:
+            self.warning_count += 1
+        elif record.levelno == CustomLogger.SUCCESS:
+            self.success_count += 1
+
+    def reset_counts(self):
+        """Reset the counts for errors, warnings, and successes."""
+        self.error_count = 0
+        self.warning_count = 0
+        self.success_count = 0
+
+
 def init_logger(config: Config) -> CustomLogger:
     """Initialize the logger for YTMusicDL."""
 
@@ -85,6 +107,12 @@ def init_logger(config: Config) -> CustomLogger:
         console_formatter = logging.Formatter("%(levelname)s: %(message)s")
     console_handler.setFormatter(console_formatter)
     log.addHandler(console_handler)
+
+    # Add a counting handler to track errors and warnings
+    counting_handler = CountingHandler()
+    counting_handler.setLevel(logging.WARNING)
+    log.addHandler(counting_handler)
+    log.counting_handler = counting_handler
 
     # Setup logging to file
     if type(config["log"]) is str:
@@ -107,3 +135,33 @@ def init_logger(config: Config) -> CustomLogger:
 def get_logger() -> CustomLogger:
     """Get the logger instance for YTMusicDL."""
     return logging.getLogger("YTMusicDL")
+
+
+def print_stats(print_success: bool = True):
+    """Print the statistics of the logger."""
+
+    log = get_logger()
+
+    if not hasattr(log, "counting_handler"):
+        log.warning("No statistics available.")
+        return
+
+    counting_handler = cast(CountingHandler, log.counting_handler)
+
+    success_count = counting_handler.success_count
+    error_count = counting_handler.error_count
+    warning_count = counting_handler.warning_count
+
+    message = "Download "
+    message += "completed " if success_count > 0 else "failed "
+    message += "with " if error_count > 0 or warning_count > 0 else ""
+    message += f"{error_count} errors " if error_count > 0 else ""
+    message += f"{warning_count} warnings " if warning_count > 0 else ""
+    message = message.strip() + "."
+
+    if error_count > 0 or success_count == 0:
+        log.error(message)
+    elif warning_count > 0:
+        log.warning(message)
+    elif success_count > 0 and print_success:
+        log.success(message)
