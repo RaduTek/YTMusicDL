@@ -28,12 +28,22 @@ class Source(TypedDict):
     id: str
 
 
+def is_source(obj: object) -> bool:
+    """Check if an object is a valid source."""
+    return isinstance(obj, dict) and "url" in obj and "type" in obj and "id" in obj
+
+
 class Sourceable(TypedDict):
     id: str
     title: str
     source: Source
     cover: NotRequired[str]
     cover_data: NotRequired[bytes]
+
+
+def is_sourceable(obj: object) -> bool:
+    """Check if an object is sourceable."""
+    return isinstance(obj, dict) and "id" in obj and "title" in obj and "source" in obj
 
 
 class Artist(TypedDict):
