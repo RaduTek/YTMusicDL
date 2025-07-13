@@ -247,7 +247,7 @@ class YTMusicDL:
 
         return playlist
 
-    def download_song(self, song: Song | Source | str):
+    def download_song(self, song: Song | Source | str) -> str:
         """Download a song from a source to the output path"""
 
         if not isinstance(song, dict) or "title" not in song:
@@ -270,16 +270,20 @@ class YTMusicDL:
         )
         output_path = os.path.join(self.config["base_path"], output_file)
 
-        if "album" in song and "cover" in song["album"]:
-            self.downloader.download_cover(song["album"])
-        elif "cover" in song:
-            self.downloader.download_cover(song)
+        if self.config["skip_download"]:
+            self.log.warning("Skipped audio download (--skip-download option enabled).")
+        else:
+            if "album" in song and "cover" in song["album"]:
+                self.downloader.download_cover(song["album"])
+            elif "cover" in song:
+                self.downloader.download_cover(song)
 
-        self.downloader.download_audio(song, output_path)
+            self.downloader.download_audio(song, output_path)
 
-        embed_metadata(output_path, song, self.config)
+            embed_metadata(output_path, song, self.config)
 
         self.log.success(f"Downloaded {utils.sourceable_str(song)}")
+        return output_path
 
     def download_album(self, album: AlbumList | Source | str):
         """Download all songs in an album"""
