@@ -1,4 +1,3 @@
-import logging
 import requests
 from io import BytesIO
 from PIL import Image
@@ -50,6 +49,8 @@ class Downloader:
                     "preferredcodec": self.config["format"],
                 }
             ],
+            "cookiesfrombrowser": self.config["cookies_from_browser"],
+            "cookiefile": self.config["cookies_file"],
         }
 
         self.log.debug(f"Generated ytdlp_opts: {ytdlp_opts}")

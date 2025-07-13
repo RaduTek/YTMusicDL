@@ -10,6 +10,8 @@ class Config(TypedDict, total=False):
     quality: AudioQuality
 
     auth_file: str | None
+    cookies_file: str | None
+    cookies_from_browser: str | None
     archive_file: str | None
     skip_already_archive_message: bool
 
@@ -55,6 +57,8 @@ def default_config() -> Config:
         "format": "m4a",
         "quality": "medium",
         "auth_file": None,
+        "cookies_file": None,
+        "cookies_from_browser": None,
         "archive_file": None,
         "skip_already_archive_message": False,
         "output_template": "{song_title} - {song_artist} [{song_id}].{ext}",
@@ -97,9 +101,13 @@ def validate_config(config: Config) -> None:
     if config["auth_file"] and not config["auth_file"].endswith(".json"):
         raise ValueError("Auth file must be a JSON file.")
 
-    if config["quality"] == "high" and not config["auth_file"]:
+    if config["quality"] == "high" and not (
+        config["cookies_file"] or config["cookies_from_browser"]
+    ):
         raise ValueError(
-            "High quality requires authentication. Please provide an auth file."
+            """High quality formats require authentication for yt-dlp. \
+Use --cookies-file or --cookies-from-browser options. \
+Refer to yt-dlp documentation for more info."""
         )
 
     if config["cover_size"] < 50:
