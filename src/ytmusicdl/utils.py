@@ -6,6 +6,12 @@ def sourceable_str(sourceable: Sourceable) -> str:
     return f"'{sourceable['title']}' ({sourceable["id"]})"
 
 
+def song_str(self, song: Song) -> str:
+    """Return a string representation of a song"""
+    sep = self.config["artist_separator"]
+    return f"{song["title"]} - {sep.join(artist["name"] for artist in song["artists"])}"
+
+
 # Write dict to JSON file
 def write_out_json(my_dict, file_name):
     s = json.dumps(my_dict, indent=2)

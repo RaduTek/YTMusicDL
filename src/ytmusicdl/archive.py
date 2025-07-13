@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, TypedDict
+from ytmusicdl.types import PlayList
 
 ISO_FMT = "%Y-%m-%dT%H:%M:%S%z"
 
@@ -41,6 +42,32 @@ def _iso_now() -> str:
 def _iso_parse(date_str: str) -> datetime:
     """Parse an ISO‑8601 date string into a UTC datetime object."""
     return datetime.strptime(date_str, ISO_FMT).replace(tzinfo=timezone.utc)
+
+
+def playlist_to_archive(
+    playlist: PlayList, songs_files: dict[str, str]
+) -> ArchivePlayList:
+    """Convert a PlayList object to an ArchivePlayList dictionary."""
+
+    songs = songs_files.keys()
+    songs_data: list[ArchiveSong] = [
+        {
+            "title": song["title"],
+            "duration": song["duration"],
+            "file": songs_files.get(song["id"], ""),
+            "downloaded": _iso_now(),
+        }
+        for song in playlist["songs"].values()
+    ]
+
+    return ArchivePlayList(
+        title=playlist["title"],
+        file=f"{playlist["title"]}.m3u8",
+        songs=songs,
+        songs_data=songs_data,
+        downloaded=_iso_now(),
+        updated=_iso_now(),
+    )
 
 
 class Archive:

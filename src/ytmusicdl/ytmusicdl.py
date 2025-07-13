@@ -12,7 +12,7 @@ from ytmusicdl.logger import init_logger, CustomLogger, print_stats
 from ytmusicdl.types import *
 from ytmusicdl.config import Config, default_config, validate_config
 from ytmusicdl.metadata import embed_metadata
-from ytmusicdl.archive import Archive
+from ytmusicdl.archive import Archive, playlist_to_archive
 from ytmusicdl.m3ufile import write_playlist_file
 
 __version__ = version("ytmusicdl")
@@ -252,11 +252,6 @@ class YTMusicDL:
 
         return playlist
 
-    def __song_string(self, song: Song) -> str:
-        """Return a string representation of a song"""
-        sep = self.config["artist_separator"]
-        return f"{song["title"]} - {sep.join(artist["name"] for artist in song["artists"])}"
-
     def download_song(self, song: Song | Source | str) -> str:
         """Download a song from a source to the output path"""
 
@@ -296,7 +291,7 @@ class YTMusicDL:
                 if self.archive:
                     self.archive.add_song(
                         song_id=song["id"],
-                        title=self.__song_string(song),
+                        title=utils.song_str(song),
                         duration=song["duration"],
                         file_path=output_file,
                         exception_on_exists=False,
@@ -320,7 +315,7 @@ class YTMusicDL:
         if self.archive:
             self.archive.add_song(
                 song_id=song["id"],
-                title=self.__song_string(song),
+                title=utils.song_str(song),
                 duration=song["duration"],
                 file_path=output_file,
             )
@@ -377,7 +372,7 @@ class YTMusicDL:
 
         self.log.info(f"Downloading playlist: {utils.sourceable_str(playlist)}...")
 
-        downloaded_songs = []
+        downloaded = {}
 
         for song in dict(playlist["songs"]).values():
             try:
@@ -386,9 +381,9 @@ class YTMusicDL:
                 dl_song["source"] = url.get_source(dl_song["id"])
                 dl_song["playlist_index"] = dl_song.get("index", 0)
 
-                self.download_song(dl_song)
+                file = self.download_song(dl_song)
 
-                downloaded_songs.append(dl_song["id"])
+                downloaded[dl_song["id"]] = file
             except KeyboardInterrupt:
                 raise
             except Exception as e:
@@ -403,14 +398,20 @@ class YTMusicDL:
                 playlist_id=playlist["id"],
                 title=playlist["title"],
                 file_path=f"{playlist["title"]}.m3u8",
-                song_ids=downloaded_songs,
+                song_ids=downloaded.keys(),
             )
 
         # Write the playlist file
         if self.config["write_playlist_file"]:
             self.log.status("Writing playlist file...")
             try:
-                archive_playlist = self.archive.get_playlist_with_songs(playlist["id"])
+                archive_playlist = None
+                if self.archive:
+                    archive_playlist = self.archive.get_playlist_with_songs(
+                        playlist["id"]
+                    )
+                else:
+                    archive_playlist = playlist_to_archive(playlist, downloaded)
                 write_playlist_file(self.base_path, archive_playlist)
             except Exception as e:
                 self.log.error(f"Failed to write playlist file: {e}")
