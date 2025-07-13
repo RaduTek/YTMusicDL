@@ -2,21 +2,20 @@
 name = "YTMusicDL"
 version = "2.0.0a1"
 authors = [
-  { name="RaduTek", email="radutek13@gmail.com" },
+  { name="RaduTek", email="me@radutek.uk" },
 ]
 description = "YouTube Music downloader with metadata"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "yt-dlp>=2024.01.01",
-    "ytmusicapi>=0.30.0",
-    "mutagen>=1.45.1",
-    "Pillow>=10.0.0",
+    "yt-dlp>=2025.6.30",
+    "ytmusicapi>=1.10.3",
+    "mutagen>=1.47.0",
 ]
 
 [project.urls]
