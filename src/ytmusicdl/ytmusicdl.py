@@ -251,6 +251,11 @@ class YTMusicDL:
 
         return playlist
 
+    def __song_string(self, song: Song) -> str:
+        """Return a string representation of a song"""
+        sep = self.config["artist_separator"]
+        return f"{song["title"]} - {sep.join(artist["name"] for artist in song["artists"])}"
+
     def download_song(self, song: Song | Source | str) -> str:
         """Download a song from a source to the output path"""
 
@@ -290,7 +295,8 @@ class YTMusicDL:
                 if self.archive:
                     self.archive.add_song(
                         song_id=song["id"],
-                        title=song["title"],
+                        title=self.__song_string(song),
+                        duration=song["duration"],
                         file_path=output_file,
                         exception_on_exists=False,
                     )
@@ -313,7 +319,8 @@ class YTMusicDL:
         if self.archive:
             self.archive.add_song(
                 song_id=song["id"],
-                title=song["title"],
+                title=self.__song_string(song),
+                duration=song["duration"],
                 file_path=output_file,
             )
 

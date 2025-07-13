@@ -10,6 +10,7 @@ class ArchiveSong(TypedDict):
     """Metadata for a single song in the archive."""
 
     title: str
+    duration: int
     file: str
     downloaded: str
 
@@ -82,6 +83,7 @@ class Archive:
         self,
         song_id: str,
         title: str,
+        duration: int,
         file_path: str | Path,
         downloaded: Optional[str] = None,
         overwrite: bool = False,
@@ -98,6 +100,7 @@ class Archive:
 
         self._data["songs"][song_id] = {
             "title": title,
+            "duration": duration,
             "file": str(file_path),
             "downloaded": downloaded or _iso_now(),
         }
