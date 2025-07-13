@@ -5,7 +5,7 @@ from ytmusicdl.config import default_config, validate_config
 from ytmusicdl.types import audio_formats, audio_qualities, cover_formats
 
 
-class SmartFormatter(argparse.HelpFormatter):
+class CustomHelpFormatter(argparse.HelpFormatter):
     def _split_lines(self, text, width):
         if text.startswith("R|"):
             return text[2:].splitlines()
@@ -14,12 +14,11 @@ class SmartFormatter(argparse.HelpFormatter):
 
 class CustomArgumentParser(argparse.ArgumentParser):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, formatter_class=SmartFormatter, **kwargs)
+        super().__init__(*args, formatter_class=CustomHelpFormatter, **kwargs)
 
     def print_usage(self, file=None):
         if file is None:
             file = sys.stderr
-        # Add emoji and custom prefix
         file.write("📖 ")
         super().print_usage(file)
 
@@ -70,12 +69,6 @@ def main():
         help="Path to the archive file to keep track of downloaded items",
     )
     parser.add_argument(
-        "--auth-file",
-        type=str,
-        default=config["auth_file"],
-        help="Path to the authentication file",
-    )
-    parser.add_argument(
         "-c",
         "--cover-format",
         type=str.lower,
@@ -89,6 +82,31 @@ def main():
         default=config["cover_size"],
         help=f"Size of the cover image in pixels (default: {config['cover_size']})",
     )
+    parser.add_argument(
+        "--auth-file",
+        type=str,
+        default=config["auth_file"],
+        help="Path to the authentication file (refer to ytmusicapi documentation for generating this file)",
+    )
+    parser.add_argument(
+        "--cookies-file",
+        type=str,
+        default=config["cookies_file"],
+        help="Path to the cookies file (used for yt-dlp audio download - check yt-dlp documentation for more info)",
+    )
+    parser.add_argument(
+        "--cookies-from-browser",
+        type=str,
+        default=config["cookies_from_browser"],
+        help="Browser to extract cookies from (used for yt-dlp audio download - check yt-dlp documentation for more info)",
+    )
+    parser.add_argument(
+        "--skip-download",
+        action="store_true",
+        default=config["skip_download"],
+        help="Skip the actual download, useful for testing or when you only want to generate metadata",
+    )
+
     # parser.add_argument(
     #     "--config", default="config.json", help="Path to the configuration file."
     # )
