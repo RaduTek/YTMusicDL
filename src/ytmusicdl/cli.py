@@ -175,3 +175,7 @@ def main():
     except Exception as e:
         ytmusicdl.log.error("❌ Error during download: %s", e)
         return
+
+
+if __name__ == "__main__":
+    main()
