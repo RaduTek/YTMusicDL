@@ -16,8 +16,6 @@ class CustomLogger(logging.getLoggerClass()):
         Log 'msg % args' with severity 'STATUS'.
         """
         if self.isEnabledFor(self.STATUS):
-            if self.getEffectiveLevel() <= logging.DEBUG:
-                msg = str(msg) + "\n"
             self._log(self.STATUS, msg, args, **kwargs)
 
     def success(self, msg: object, *args: object, **kwargs: object) -> None:
@@ -39,6 +37,9 @@ class CustomStreamHandler(logging.StreamHandler):
             msg = self.format(record)
             if record.levelname == "STATUS":
                 # End with carriage return and no newline
+                if self.level <= logging.DEBUG:
+                    # If debug level, overwrite the line
+                    msg += "\n"
                 self.stream.write("\r\x1b[2K" + msg)
                 self.flush()
             else:
