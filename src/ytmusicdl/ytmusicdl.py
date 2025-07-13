@@ -374,6 +374,10 @@ class YTMusicDL:
     def download_many(self, sources: list[Source | str]):
         """Download from multiple sources"""
 
+        if len(sources) == 0:
+            self.log.warning("No sources provided for download.")
+            return
+
         for source in sources:
             try:
                 self.download(source)
@@ -387,4 +391,5 @@ class YTMusicDL:
                 self.log.debug(traceback.format_exc())
                 continue
 
-        self.log.success("Download complete!")
+        if len(sources) > 1:
+            self.log.success("Download complete!")
