@@ -1,5 +1,4 @@
 import copy
-import os
 import traceback
 from importlib.metadata import version
 from pathlib import Path
@@ -13,6 +12,7 @@ from ytmusicdl.logger import init_logger, CustomLogger, print_stats
 from ytmusicdl.types import *
 from ytmusicdl.config import Config, default_config, validate_config
 from ytmusicdl.metadata import embed_metadata
+from ytmusicdl.archive import Archive
 
 __version__ = version("ytmusicdl")
 
@@ -31,6 +31,7 @@ class YTMusicDL:
     # Components
     parser: Parser
     downloader: Downloader
+    archive: Archive = None
 
     def __init__(self, config: Config = None):
         """Create a new YTMusicDL object"""
@@ -57,6 +58,10 @@ class YTMusicDL:
 
         self.parser = Parser(self.config)
         self.downloader = Downloader(self.config)
+
+        if self.config["archive_file"]:
+            self.archive = Archive(self.config["archive_file"])
+            self.log.debug(f"Archive file: {self.config["archive_file"]}")
 
     def find_audio_counterpart(self, song: Song, album: Album | None = None) -> str:
         """Find the audio counterpart of a music video song\n
@@ -249,9 +254,17 @@ class YTMusicDL:
     def download_song(self, song: Song | Source | str) -> str:
         """Download a song from a source to the output path"""
 
-        if not isinstance(song, dict) or "title" not in song:
+        if not is_source(song):
             source = url.get_source(song)
 
+        if self.archive and self.archive.song_exists(source["id"]):
+            song_archived = self.archive.get_song(source["id"])
+            self.log.info(
+                f"Song '{song_archived["title"]}' already exists in archive, skipping download."
+            )
+            return song_archived["file"]
+
+        if not is_sourceable(song):
             self.log.status("Loading song info...")
             if self.config["song_full_metadata"]:
                 song = self.get_song_with_album(source)
@@ -274,6 +287,13 @@ class YTMusicDL:
                 self.log.info(
                     f"File '{output_file}' already exists, skipping download."
                 )
+                if self.archive:
+                    self.archive.add_song(
+                        song_id=song["id"],
+                        title=song["title"],
+                        file_path=output_file,
+                        exception_on_exists=False,
+                    )
                 return str(output_path)
 
             self.log.warning(f"File '{output_file}' already exists, overwriting.")
@@ -289,6 +309,13 @@ class YTMusicDL:
             self.downloader.download_audio(song, str(output_path))
 
             embed_metadata(str(output_path), song, self.config)
+
+        if self.archive:
+            self.archive.add_song(
+                song_id=song["id"],
+                title=song["title"],
+                file_path=output_file,
+            )
 
         self.log.success(f"Downloaded {utils.sourceable_str(song)}")
 
@@ -342,6 +369,8 @@ class YTMusicDL:
 
         self.log.info(f"Downloading playlist: {utils.sourceable_str(playlist)}...")
 
+        downloaded_songs = []
+
         for song in dict(playlist["songs"]).values():
             try:
                 dl_song = Song(**song)
@@ -349,8 +378,9 @@ class YTMusicDL:
                 dl_song["source"] = url.get_source(dl_song["id"])
                 dl_song["playlist_index"] = dl_song.get("index", 0)
 
-                # Download the song
                 self.download_song(dl_song)
+
+                downloaded_songs.append(dl_song["id"])
             except KeyboardInterrupt:
                 raise
             except Exception as e:
@@ -359,6 +389,14 @@ class YTMusicDL:
                 )
                 self.log.debug(traceback.format_exc())
                 continue
+
+        if self.archive:
+            self.archive.add_playlist(
+                playlist_id=playlist["id"],
+                title=playlist["title"],
+                file_path=f"{playlist["title"]}.m3u8",
+                song_ids=downloaded_songs,
+            )
 
         self.log.success(f"Downloaded playlist: {utils.sourceable_str(playlist)}")
 
