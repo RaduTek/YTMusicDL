@@ -58,12 +58,13 @@ class Song(Sourceable):
     year: int
     type: SongType
     artists: list[Artist]
-    lyrics: str
-    lyrics_source: str
-    index: int
-    album: Album
-    playlist: dict
-    playlist_index: int
+    genre: NotRequired[str]
+    lyrics: NotRequired[str]
+    lyrics_source: NotRequired[str]
+    index: NotRequired[int]
+    album: NotRequired[Album]
+    playlist: NotRequired[dict]
+    playlist_index: NotRequired[int]
     metadataFull: NotRequired[bool]
 
 
@@ -82,14 +83,3 @@ class PlayList(Sourceable):
     visibility: str
     description: str
     songs: list[Song]
-
-
-class ArchiveSong(TypedDict):
-    id: str
-    title: str
-    artists: str
-    file_name: str
-
-
-class Archive(TypedDict):
-    downloaded_songs: list[ArchiveSong]
