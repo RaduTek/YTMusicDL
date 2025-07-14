@@ -1,7 +1,8 @@
 import logging
-import os
+import sys
 from typing import cast
 from ytmusicdl.config import Config
+from importlib.metadata import version
 
 STATUS_LEVEL_NUM = 25
 SUCCESS_LEVEL_NUM = 35
@@ -166,3 +167,17 @@ def print_stats(print_success: bool = True):
         log.warning(message)
     elif success_count > 0 and print_success:
         log.success(message)
+
+
+def print_versions():
+    """Print the versions of the dependencies."""
+
+    log = get_logger()
+
+    log.info(f"YTMusicDL {version('ytmusicdl')}")
+    log.debug(f"Platform: {sys.platform}, Python: {sys.version}")
+    log.debug(
+        f"Package versions:\n\
+yt-dlp: {version('yt-dlp')}\n\
+ytmusicapi: {version('ytmusicapi')}"
+    )

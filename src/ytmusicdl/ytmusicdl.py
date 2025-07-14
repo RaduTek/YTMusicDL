@@ -1,6 +1,5 @@
 import copy
 import traceback
-from importlib.metadata import version
 from pathlib import Path
 from ytmusicapi import YTMusic
 from ytmusicdl.download import Downloader
@@ -8,14 +7,12 @@ from ytmusicdl.parsers import Parser
 import ytmusicdl.template as template
 import ytmusicdl.url as url
 import ytmusicdl.utils as utils
-from ytmusicdl.logger import init_logger, CustomLogger, print_stats
+from ytmusicdl.logger import init_logger, CustomLogger, print_stats, print_versions
 from ytmusicdl.types import *
 from ytmusicdl.config import Config, default_config, validate_config
 from ytmusicdl.metadata import embed_metadata
 from ytmusicdl.archive import Archive, playlist_to_archive
 from ytmusicdl.m3ufile import write_playlist_file
-
-__version__ = version("ytmusicdl")
 
 
 class YTMusicDL:
@@ -49,7 +46,7 @@ class YTMusicDL:
 
         # Set up logger
         self.log = init_logger(self.config)
-        self.log.info(f"YTMusicDL version {__version__}")
+        print_versions()
 
         self.base_path = Path(self.config["base_path"]).absolute()
         self.log.debug(f"Base path: {self.base_path}")
