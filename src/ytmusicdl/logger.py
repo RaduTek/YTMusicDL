@@ -1,5 +1,6 @@
 import logging
 import sys
+from pathlib import Path
 from typing import cast
 from ytmusicdl.config import Config
 from importlib.metadata import version
@@ -118,11 +119,10 @@ def init_logger(config: Config) -> CustomLogger:
 
     # Setup logging to file
     if type(config["log"]) is str:
-        log_file = config["log"]
-        log_file = os.path.join(config["base_path"], log_file)
+        log_file = Path(config["base_path"]) / config["log"]
         log_level = logging.DEBUG if config["log_verbose"] else logging.INFO
 
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        log_file.parent.mkdir(parents=True, exist_ok=True)
         log_file_handler = logging.FileHandler(log_file)
         log_file_handler.setLevel(log_level)
         log_file_formatter = logging.Formatter(
@@ -177,7 +177,5 @@ def print_versions():
     log.info(f"YTMusicDL {version('ytmusicdl')}")
     log.debug(f"Platform: {sys.platform}, Python: {sys.version}")
     log.debug(
-        f"Package versions:\n\
-yt-dlp: {version('yt-dlp')}\n\
-ytmusicapi: {version('ytmusicapi')}"
+        f"Package versions: yt-dlp: {version('yt-dlp')}, ytmusicapi: {version('ytmusicapi')}"
     )
