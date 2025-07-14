@@ -16,6 +16,7 @@ dependencies = [
     "yt-dlp>=2025.6.30",
     "ytmusicapi>=1.10.3",
     "mutagen>=1.47.0",
+    "typeguard>=4.4.4",
 ]
 
 [project.urls]
