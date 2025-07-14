@@ -21,6 +21,7 @@ def _format_error(message: str) -> str:
 def _print_error(message: str):
     """Print an error message to stderr."""
     sys.stderr.write(f"{_format_error(message)}\n")
+    sys.exit(1)
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -166,7 +167,6 @@ def main():
 
     # Parse command line arguments
     args = cast(Config, parser.parse_args().__dict__)
-    args_config = different_to_default(args)
 
     # Load config from global file
     try:
@@ -186,7 +186,9 @@ def main():
         _print_error(f"Error loading local config:\n{e}")
         return
 
-    config.update(args_config)
+    # Load config from arguments
+    # Override with changes from default config
+    config.update(different_to_default(args))
 
     if args["print_config"]:
         print(json.dumps(config, indent=4, ensure_ascii=False))
@@ -196,19 +198,17 @@ def main():
         validate_config(config)
     except ValueError as e:
         _print_error(f"Configuration error: {e}")
-        return
 
     try:
         ytmusicdl = YTMusicDL(config)
     except Exception as e:
         _print_error(f"Error initializing YTMusicDL: {e}")
-        return
 
     try:
         ytmusicdl.download_many(args["urls"])
     except Exception as e:
         ytmusicdl.log.error("Error during download: %s", e)
-        return
+        sys.exit(1)
 
 
 if __name__ == "__main__":
