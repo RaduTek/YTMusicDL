@@ -16,7 +16,7 @@ def parse_id_type(id: str) -> UrlType:
 
     if id.startswith("OLAK5uy_") or id.startswith("MPRE"):
         return "album"
-    elif id.startswith("PL"):
+    elif id.startswith("PL") or id.startswith("LM"):
         return "playlist"
 
     return "watch"
