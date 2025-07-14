@@ -49,9 +49,13 @@ class Downloader:
                     "preferredcodec": self.config["format"],
                 }
             ],
-            "cookiesfrombrowser": self.config["cookies_from_browser"],
-            "cookiefile": self.config["cookies_file"],
         }
+
+        if self.config["cookies_from_browser"] is not None:
+            ytdlp_opts["cookiesfrombrowser"] = (self.config["cookies_from_browser"],)
+
+        if self.config["cookies_file"] is not None:
+            ytdlp_opts["cookiefile"] = self.config["cookies_file"]
 
         self.log.debug(f"Generated ytdlp_opts: {ytdlp_opts}")
 
