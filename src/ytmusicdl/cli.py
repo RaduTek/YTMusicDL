@@ -1,7 +1,16 @@
 import argparse
 import sys
+import json
+from pathlib import Path
+from typing import cast
 from ytmusicdl import YTMusicDL
-from ytmusicdl.config import default_config, validate_config
+from ytmusicdl.config import (
+    Config,
+    default_config,
+    validate_config,
+    import_config,
+    different_to_default,
+)
 from ytmusicdl.types import audio_formats, audio_qualities, cover_formats
 
 
@@ -45,7 +54,7 @@ def main():
         description="Download music from YouTube Music using YTMusicDL.",
     )
     parser.add_argument(
-        "urls", metavar="URL", type=str, nargs="+", help="List of URL(s) to download"
+        "urls", metavar="URL", type=str, nargs="*", help="List of URL(s) to download"
     )
     parser.add_argument(
         "-b",
@@ -81,7 +90,6 @@ def main():
         help="Path to the archive file to keep track of downloaded items",
     )
     parser.add_argument(
-        "-c",
         "--cover-format",
         type=str.lower,
         default=config["cover_format"],
@@ -150,30 +158,56 @@ def main():
         default=config["log_verbose"],
         help="Enable verbose output in the log file",
     )
+    parser.add_argument(
+        "--print-config",
+        action="store_true",
+        help="Print the current configuration and exit",
+    )
 
-    # parser.add_argument(
-    #     "--config", default="config.json", help="Path to the configuration file."
-    # )
+    # Parse command line arguments
+    args = cast(Config, parser.parse_args().__dict__)
+    args_config = different_to_default(args)
 
-    args = parser.parse_args()
-    config.update(args.__dict__)
+    # Load config from global file
+    try:
+        global_config_path = Path("~/.ytmusicdl/config.json").expanduser()
+        if global_config_path.exists():
+            import_config(global_config_path, config)
+    except Exception as e:
+        _print_error(f"Error loading global config:\n{e}")
+        return
+
+    # Load config from current working path
+    try:
+        config_path = Path("./ytmusicdl.json")
+        if config_path.exists():
+            import_config(config_path, config)
+    except Exception as e:
+        _print_error(f"Error loading local config:\n{e}")
+        return
+
+    config.update(args_config)
+
+    if args["print_config"]:
+        print(json.dumps(config, indent=4, ensure_ascii=False))
+        return
 
     try:
         validate_config(config)
     except ValueError as e:
-        _print_error(f"❌ Configuration error: {e}")
+        _print_error(f"Configuration error: {e}")
         return
 
     try:
         ytmusicdl = YTMusicDL(config)
     except Exception as e:
-        _print_error(f"❌ Error initializing YTMusicDL: {e}")
+        _print_error(f"Error initializing YTMusicDL: {e}")
         return
 
     try:
-        ytmusicdl.download_many(args.urls)
+        ytmusicdl.download_many(args["urls"])
     except Exception as e:
-        ytmusicdl.log.error("❌ Error during download: %s", e)
+        ytmusicdl.log.error("Error during download: %s", e)
         return
 
 

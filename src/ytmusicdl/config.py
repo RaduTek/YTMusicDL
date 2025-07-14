@@ -1,3 +1,6 @@
+import json
+from pathlib import Path
+from typeguard import check_type, TypeCheckError
 from ytmusicdl.types import AudioFormat, AudioQuality, CoverFormat
 from typing import TypedDict
 
@@ -13,7 +16,6 @@ class Config(TypedDict, total=False):
     cookies_file: str | None
     cookies_from_browser: str | None
     archive_file: str | None
-    skip_already_archive_message: bool
 
     output_template: str
     cover_format: CoverFormat
@@ -53,14 +55,13 @@ def default_config() -> Config:
     """Return a dictionary with default configuration settings."""
 
     return {
-        "base_path": "",
+        "base_path": ".",
         "format": "m4a",
         "quality": "medium",
         "auth_file": None,
         "cookies_file": None,
         "cookies_from_browser": None,
         "archive_file": None,
-        "skip_already_archive_message": False,
         "output_template": "{song_title} - {song_artist} [{song_id}].{ext}",
         "cover_format": "jpg",
         "cover_size": 500,
@@ -92,8 +93,50 @@ def default_config() -> Config:
     }
 
 
+def different_to_default(config: Config) -> dict[str, any]:
+    """Return a dictionary with configuration options that differ from the default."""
+
+    defaults = default_config()
+    return {k: v for k, v in config.items() if k in defaults and v != defaults[k]}
+
+
+def import_config(config_file: str | Path, config: Config = None) -> Config:
+    """Import configuration from a JSON file and update the given configuration object."""
+
+    config_file = Path(config_file)
+
+    if not config_file.exists():
+        raise FileNotFoundError(f"Configuration file {config_file} does not exist.")
+
+    with open(config_file, "r", encoding="utf-8") as f:
+        try:
+            imported_config = json.load(f)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format in {config_file}:\n{e}")
+
+    try:
+        validate_config(imported_config)
+    except ValueError as e:
+        raise ValueError(f"Invalid configuration options in {config_file}:\n{e}")
+
+    config = config or default_config()
+
+    config.update(imported_config)
+
+    return config
+
+
 def validate_config(config: Config) -> None:
     """Validate the configuration settings."""
+
+    try:
+        check_type(config, Config)
+    except TypeCheckError as e:
+        raise ValueError(e)
+
+    defaults = default_config()
+    defaults.update(config)
+    config = defaults
 
     if config["archive_file"] and not config["archive_file"].endswith(".json"):
         raise ValueError("Archive file must be a JSON file.")
