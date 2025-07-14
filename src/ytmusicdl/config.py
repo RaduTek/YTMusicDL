@@ -2,11 +2,13 @@ import json
 from pathlib import Path
 from typeguard import check_type, TypeCheckError
 from ytmusicdl.types import AudioFormat, AudioQuality, CoverFormat
-from typing import TypedDict
+from typing import TypedDict, NotRequired
 
 
 class Config(TypedDict, total=False):
     """Configuration settings for YTMusicDL."""
+
+    urls: NotRequired[list[str]]
 
     base_path: str
     format: AudioFormat
@@ -121,7 +123,19 @@ def import_config(config_file: str | Path, config: Config = None) -> Config:
 
     config = config or default_config()
 
-    config.update(imported_config)
+    return update_config(config, imported_config)
+
+
+def update_config(config: Config, update: Config) -> Config:
+    """Update an existing configuration with a new configuration"""
+
+    existing_urls = config.get("urls", [])
+    new_urls = update.get("urls", [])
+
+    urls = existing_urls + new_urls
+
+    config.update(update)
+    config["urls"] = urls
 
     return config
 

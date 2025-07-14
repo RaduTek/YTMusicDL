@@ -10,6 +10,7 @@ from ytmusicdl.config import (
     validate_config,
     import_config,
     different_to_default,
+    update_config,
 )
 from ytmusicdl.types import audio_formats, audio_qualities, cover_formats
 
@@ -80,6 +81,13 @@ def main():
         default=config["quality"],
         choices=audio_qualities,
         help=f"Audio quality (default: {config["quality"]})",
+    )
+    parser.add_argument(
+        "-o",
+        "--output-template",
+        type=str,
+        default=config["output_template"],
+        help="Output file path template (see documentation for format)",
     )
     parser.add_argument(
         "-a",
@@ -188,7 +196,7 @@ def main():
 
     # Load config from arguments
     # Override with changes from default config
-    config.update(different_to_default(args))
+    update_config(config, different_to_default(args))
 
     if args["print_config"]:
         print(json.dumps(config, indent=4, ensure_ascii=False))
@@ -205,7 +213,7 @@ def main():
         _print_error(f"Error initializing YTMusicDL: {e}")
 
     try:
-        ytmusicdl.download_many(args["urls"])
+        ytmusicdl.download_many(config["urls"])
     except Exception as e:
         ytmusicdl.log.error("Error during download: %s", e)
         sys.exit(1)
