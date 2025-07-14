@@ -288,7 +288,7 @@ class YTMusicDL:
                 if self.archive:
                     self.archive.add_song(
                         song_id=song["id"],
-                        title=utils.song_str(song),
+                        title=utils.song_str(song, self.config),
                         duration=song["duration"],
                         file_path=output_file,
                         exception_on_exists=False,
@@ -312,7 +312,7 @@ class YTMusicDL:
         if self.archive:
             self.archive.add_song(
                 song_id=song["id"],
-                title=utils.song_str(song),
+                title=utils.song_str(song, self.config),
                 duration=song["duration"],
                 file_path=output_file,
             )

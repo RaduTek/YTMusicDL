@@ -1,3 +1,4 @@
+from ytmusicdl.config import Config
 from ytmusicdl.types import *
 import json
 
@@ -6,9 +7,9 @@ def sourceable_str(sourceable: Sourceable) -> str:
     return f"'{sourceable['title']}' ({sourceable["id"]})"
 
 
-def song_str(self, song: Song) -> str:
+def song_str(song: Song, config: Config) -> str:
     """Return a string representation of a song"""
-    sep = self.config["artist_separator"]
+    sep = config["artist_separator"]
     return f"{song["title"]} - {sep.join(artist["name"] for artist in song["artists"])}"
 
 
