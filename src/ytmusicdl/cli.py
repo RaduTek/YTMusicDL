@@ -179,7 +179,7 @@ def main():
 
     # Load config from current working path
     try:
-        config_path = Path("./ytmusicdl.json")
+        config_path = Path(args["base_path"]) / "ytmusicdl.json"
         if config_path.exists():
             import_config(config_path, config)
     except Exception as e:
