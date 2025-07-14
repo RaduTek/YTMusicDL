@@ -4,6 +4,11 @@ from ytmusicdl.types import *
 from ytmusicdl.config import Config
 
 
+def sanitize_value(value: str, replace: str) -> str:
+    invalid_chars = r'[\/\\:*?"<>|]'
+    return re.sub(invalid_chars, replace, value)
+
+
 def get_template_key(key: str, song: Song, config: Config) -> str:
     """Get a key from the song data"""
 
@@ -98,7 +103,10 @@ def parse_template(template: str, song: Song, config: Config) -> str:
         keys = expr.split("|")
         for key in keys:
             try:
-                value = get_template_key(key, song, config)
+                value = sanitize_value(
+                    value=get_template_key(key, song, config),
+                    replace=config["filename_sanitize_placeholder"],
+                )
                 if type(value) is str:
                     return value + sep
             except KeyError:
