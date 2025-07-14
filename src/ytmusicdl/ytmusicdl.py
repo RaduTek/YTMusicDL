@@ -4,6 +4,7 @@ from pathlib import Path
 from ytmusicapi import YTMusic
 from ytmusicdl.download import Downloader
 from ytmusicdl.parsers import Parser
+from ytmusicdl.presets import fill_presets
 import ytmusicdl.template as template
 import ytmusicdl.url as url
 import ytmusicdl.utils as utils
@@ -50,6 +51,9 @@ class YTMusicDL:
 
         self.base_path = Path(self.config["base_path"]).absolute()
         self.log.debug(f"Base path: {self.base_path}")
+
+        # Replace preset placeholders
+        fill_presets(self.config)
 
         # Spawn a ytmusicapi object with or without authentification headers
         self.ytmusic = YTMusic(auth=self.config["auth_file"])

@@ -64,7 +64,7 @@ def default_config() -> Config:
         "cookies_file": None,
         "cookies_from_browser": None,
         "archive_file": None,
-        "output_template": "{song_title} - {song_artist} [{song_id}].{ext}",
+        "output_template": "preset:default",
         "cover_format": "jpg",
         "cover_size": 500,
         "write_cover": False,
