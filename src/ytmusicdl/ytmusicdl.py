@@ -374,6 +374,7 @@ class YTMusicDL:
         self.log.info(f"Downloading playlist: {utils.sourceable_str(playlist)}...")
 
         downloaded = {}
+        cancel_after = False
 
         for song in dict(playlist["songs"]).values():
             try:
@@ -386,7 +387,11 @@ class YTMusicDL:
 
                 downloaded[dl_song["id"]] = file
             except KeyboardInterrupt:
-                raise
+                self.log.warning(
+                    "Download interrupted by user. Saving playlist state..."
+                )
+                cancel_after = True
+                break
             except Exception as e:
                 self.log.error(
                     f"Failed to download song: {utils.sourceable_str(song)}\n{e}"
@@ -421,6 +426,9 @@ class YTMusicDL:
                 self.log.success("Playlist file written successfully.")
 
         self.log.success(f"Downloaded playlist: {utils.sourceable_str(playlist)}")
+
+        if cancel_after:
+            raise KeyboardInterrupt()
 
     def download(self, source: Source | str):
         """Download from a source"""
