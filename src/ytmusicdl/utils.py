@@ -1,6 +1,5 @@
 from ytmusicdl.config import Config
 from ytmusicdl.types import *
-import json
 
 
 def sourceable_str(sourceable: Sourceable) -> str:
