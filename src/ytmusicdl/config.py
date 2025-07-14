@@ -52,6 +52,8 @@ class Config(TypedDict, total=False):
     datetime_format: str
     unknown_placeholder: str
 
+    print_config: NotRequired[bool]
+
 
 def default_config() -> Config:
     """Return a dictionary with default configuration settings."""
@@ -99,7 +101,11 @@ def different_to_default(config: Config) -> dict[str, any]:
     """Return a dictionary with configuration options that differ from the default."""
 
     defaults = default_config()
-    return {k: v for k, v in config.items() if k in defaults and v != defaults[k]}
+    return {
+        k: v
+        for k, v in config.items()
+        if k not in defaults or (k in defaults and v != defaults[k])
+    }
 
 
 def import_config(config_file: str | Path, config: Config = None) -> Config:
