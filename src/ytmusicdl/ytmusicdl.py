@@ -256,10 +256,10 @@ class YTMusicDL:
         """Download a song from a source to the output path"""
 
         if not is_source(song):
-            source = url.get_source(song)
+            song = url.get_source(song)
 
-        if self.archive and self.archive.song_exists(source["id"]):
-            song_archived = self.archive.get_song(source["id"])
+        if self.archive and self.archive.song_exists(song["id"]):
+            song_archived = self.archive.get_song(song["id"])
             self.log.info(
                 f"Song '{song_archived["title"]}' already exists in archive, skipping download."
             )
@@ -268,9 +268,9 @@ class YTMusicDL:
         if not is_sourceable(song):
             self.log.status("Loading song info...")
             if self.config["song_full_metadata"]:
-                song = self.get_song_with_album(source)
+                song = self.get_song_with_album(song)
             else:
-                song = self.get_song_info(source)
+                song = self.get_song_info(song)
 
         if self.config["song_full_metadata"] and not song.get("metadataFull", False):
             song_extra = self.get_song_with_album(song["source"])
