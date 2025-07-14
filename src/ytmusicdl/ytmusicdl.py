@@ -5,7 +5,7 @@ from ytmusicapi import YTMusic
 from ytmusicdl.download import Downloader
 from ytmusicdl.parsers import Parser
 from ytmusicdl.presets import fill_presets
-import ytmusicdl.template as template
+from ytmusicdl.template import parse_template, sanitize_value
 import ytmusicdl.url as url
 import ytmusicdl.utils as utils
 from ytmusicdl.logger import init_logger, CustomLogger, print_stats, print_versions
@@ -279,9 +279,7 @@ class YTMusicDL:
 
         self.log.status(f"Downloading song: {utils.sourceable_str(song)}...")
 
-        output_file = template.parse_template(
-            self.config["output_template"], song, self.config
-        )
+        output_file = parse_template(self.config["output_template"], song, self.config)
         output_path = self.base_path / output_file
 
         if output_path.exists():
@@ -400,10 +398,11 @@ class YTMusicDL:
                 continue
 
         if self.archive:
+            playlist_file = sanitize_value(playlist["title"], self.config) + ".m3u8"
             self.archive.add_playlist(
                 playlist_id=playlist["id"],
                 title=playlist["title"],
-                file_path=f"{playlist["title"]}.m3u8",
+                file_path=playlist_file,
                 song_ids=downloaded.keys(),
             )
 
@@ -417,7 +416,9 @@ class YTMusicDL:
                         playlist["id"]
                     )
                 else:
-                    archive_playlist = playlist_to_archive(playlist, downloaded)
+                    archive_playlist = playlist_to_archive(
+                        playlist, downloaded, self.config
+                    )
                 write_playlist_file(self.base_path, archive_playlist)
             except Exception as e:
                 self.log.error(f"Failed to write playlist file: {e}")

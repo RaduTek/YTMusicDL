@@ -4,9 +4,10 @@ from ytmusicdl.types import *
 from ytmusicdl.config import Config
 
 
-def sanitize_value(value: str, replace: str) -> str:
+def sanitize_value(value: str, config: Config) -> str:
+    """Sanitize a value to be used in a filename"""
     invalid_chars = r'[\/\\:*?"<>|]'
-    return re.sub(invalid_chars, replace, value)
+    return re.sub(invalid_chars, config["filename_sanitize_placeholder"], value)
 
 
 def get_template_key(key: str, song: Song, config: Config) -> str:
@@ -105,7 +106,7 @@ def parse_template(template: str, song: Song, config: Config) -> str:
             try:
                 value = sanitize_value(
                     value=get_template_key(key, song, config),
-                    replace=config["filename_sanitize_placeholder"],
+                    config=config,
                 )
                 if type(value) is str:
                     return value + sep

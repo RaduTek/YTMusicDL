@@ -2,6 +2,8 @@ from pathlib import Path
 import json
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, TypedDict
+from ytmusicdl.config import Config
+from ytmusicdl.template import sanitize_value
 from ytmusicdl.types import PlayList
 
 ISO_FMT = "%Y-%m-%dT%H:%M:%S%z"
@@ -45,7 +47,7 @@ def _iso_parse(date_str: str) -> datetime:
 
 
 def playlist_to_archive(
-    playlist: PlayList, songs_files: dict[str, str]
+    playlist: PlayList, songs_files: dict[str, str], config: Config
 ) -> ArchivePlayList:
     """Convert a PlayList object to an ArchivePlayList dictionary."""
 
@@ -60,9 +62,11 @@ def playlist_to_archive(
         for song in playlist["songs"].values()
     ]
 
+    playlist_file = sanitize_value(playlist["title"], config) + ".m3u8"
+
     return ArchivePlayList(
         title=playlist["title"],
-        file=f"{playlist["title"]}.m3u8",
+        file=playlist_file,
         songs=songs,
         songs_data=songs_data,
         downloaded=_iso_now(),
