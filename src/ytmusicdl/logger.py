@@ -157,16 +157,16 @@ def print_stats(print_success: bool = True):
     message = (
         f"Downloaded {success_count} songs "
         if success_count > 0
-        else "Download failed "
+        else "Nothing was downloaded "
     )
     message += "with " if error_count > 0 or warning_count > 0 else ""
     message += f"{error_count} errors " if error_count > 0 else ""
     message += f"{warning_count} warnings " if warning_count > 0 else ""
     message = message.strip() + "."
 
-    if error_count > 0 or success_count == 0:
+    if error_count > 0:
         log.error(message)
-    elif warning_count > 0:
+    elif warning_count > 0 or success_count == 0:
         log.warning(message)
     elif success_count > 0 and print_success:
         log.success(message)
