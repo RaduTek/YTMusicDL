@@ -168,6 +168,12 @@ def main():
         help="Enable verbose output in the log file",
     )
     parser.add_argument(
+        "--hide-archive-message",
+        action="store_true",
+        default=config["hide_archive_message"],
+        help="Hide the 'already exists in archive' message when using the archive file",
+    )
+    parser.add_argument(
         "--print-config",
         action="store_true",
         help="Print the current configuration and exit",

@@ -261,9 +261,10 @@ class YTMusicDL:
 
         if self.archive and self.archive.song_exists(song["id"]):
             song_archived = self.archive.get_song(song["id"])
-            self.log.info(
-                f"Song '{song_archived["title"]}' already exists in archive, skipping download."
-            )
+            if not self.config["hide_archive_message"]:
+                self.log.info(
+                    f"Song '{song_archived["title"]}' already exists in archive, skipping download."
+                )
             return song_archived["file"]
 
         if not is_sourceable(song):

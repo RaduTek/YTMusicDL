@@ -47,6 +47,7 @@ class Config(TypedDict, total=False):
     library_songs_limit: int
 
     supress_ytdlp_output: bool
+    hide_archive_message: bool
     date_format: str
     time_format: str
     datetime_format: str
@@ -90,6 +91,7 @@ def default_config() -> Config:
         "library_order": "recently_added",
         "library_songs_limit": 5000,
         "supress_ytdlp_output": True,
+        "hide_archive_message": False,
         "date_format": "%d-%m-%Y",
         "time_format": "%H-%M-%S",
         "datetime_format": "%d-%m-%Y %H-%M-%S",
