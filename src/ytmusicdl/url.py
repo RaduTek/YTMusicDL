@@ -18,6 +18,10 @@ def parse_id_type(id: str) -> UrlType:
         return "album"
     elif id.startswith("PL") or id.startswith("LM"):
         return "playlist"
+    elif id == "liked_songs":
+        return "liked_songs"
+    elif id == "library_songs":
+        return "library_songs"
 
     return "watch"
 
@@ -36,6 +40,13 @@ def parse_id(id: str) -> Source:
             source["url"] = f"{base_url}playlist?list={id}"
         case "album":
             source["url"] = f"{base_url}browse/{id}"
+        case "liked_songs":
+            source["type"] = "playlist"
+            source["subtype"] = "liked_songs"
+            source["id"] = "LM"
+            source["url"] = f"{base_url}playlist?list=LM"
+        case "library_songs":
+            source["url"] = f"{base_url}library/songs"
 
     return source
 

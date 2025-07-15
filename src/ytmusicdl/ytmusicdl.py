@@ -433,6 +433,35 @@ class YTMusicDL:
         if cancel_after:
             raise KeyboardInterrupt()
 
+    def download_library_songs(self):
+        """Download all songs from the user's library"""
+
+        if not self.config["auth_file"]:
+            raise ValueError("You must provide an auth file to download library songs.")
+
+        self.log.status("Loading library songs...")
+
+        songs = self.ytmusic.get_library_songs(
+            self.config["library_limit"], order="recently_added"
+        )
+
+        self.log.status("Parsing song entries...")
+        songs = [self.parser.parse_track_song(song) for song in songs]
+
+        self.log.info("Downloading library songs...")
+        for song in songs:
+            try:
+                song["source"] = url.get_source(song["id"])
+                self.download_song(song)
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                self.log.error(
+                    f"Failed to download song: {utils.song_str(song, self.config)}\n{e}"
+                )
+                self.log.debug(traceback.format_exc())
+                continue
+
     def download(self, source: Source | str):
         """Download from a source"""
 
@@ -446,6 +475,8 @@ class YTMusicDL:
             self.download_song(source)
         elif source["type"] == "playlist":
             self.download_playlist(source)
+        elif source["type"] == "library_songs":
+            self.download_library_songs()
         else:
             raise ValueError(f"Invalid source type: {source['type']}")
 
