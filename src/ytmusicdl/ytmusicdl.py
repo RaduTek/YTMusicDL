@@ -59,7 +59,7 @@ class YTMusicDL:
         if self.config["auth_file"]:
             self.log.debug(f"Using auth file: {self.config['auth_file']}")
             auth_file = Path(self.config["auth_file"]).expanduser().resolve()
-            self.ytmusic = YTMusic(auth=auth_file)
+            self.ytmusic = YTMusic(auth=str(auth_file))
         else:
             self.log.debug("No auth file provided, using unauthenticated mode.")
             self.ytmusic = YTMusic()
