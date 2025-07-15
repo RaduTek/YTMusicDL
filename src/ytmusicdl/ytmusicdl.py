@@ -49,14 +49,20 @@ class YTMusicDL:
         self.log = init_logger(self.config)
         print_versions()
 
-        self.base_path = Path(self.config["base_path"]).absolute()
+        self.base_path = Path(self.config["base_path"]).resolve()
         self.log.debug(f"Base path: {self.base_path}")
 
         # Replace preset placeholders
         fill_presets(self.config)
 
         # Spawn a ytmusicapi object with or without authentification headers
-        self.ytmusic = YTMusic(auth=self.config["auth_file"])
+        if self.config["auth_file"]:
+            self.log.debug(f"Using auth file: {self.config['auth_file']}")
+            auth_file = Path(self.config["auth_file"]).expanduser().resolve()
+            self.ytmusic = YTMusic(auth=auth_file)
+        else:
+            self.log.debug("No auth file provided, using unauthenticated mode.")
+            self.ytmusic = YTMusic()
 
         self.parser = Parser(self.config)
         self.downloader = Downloader(self.config)
