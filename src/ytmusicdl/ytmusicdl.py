@@ -442,7 +442,7 @@ class YTMusicDL:
         self.log.status("Loading library songs...")
 
         songs = self.ytmusic.get_library_songs(
-            self.config["library_limit"], order="recently_added"
+            self.config["library_songs_limit"], order=self.config["library_order"]
         )
 
         self.log.status("Parsing song entries...")
