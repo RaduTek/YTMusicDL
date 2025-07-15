@@ -342,10 +342,12 @@ class YTMusicDL:
             self.log.status("Loading album info...")
             album = self.get_album_list(source)
 
-        self.log.status(f"Downloading album: {utils.sourceable_str(album)}...")
-        self.log.debug(f"Album data: {album}")
+        songs = dict(album["songs"]).values()
+        self.log.info(
+            f"Downloading album: {utils.sourceable_str(album)} ({len(songs)} songs)..."
+        )
 
-        for song in album["songs"].values():
+        for song in songs:
             try:
                 dl_song = Song(**song)
                 dl_song["album"] = album
@@ -371,12 +373,15 @@ class YTMusicDL:
             self.log.status(f"Loading playlist info...")
             playlist = self.get_playlist_info(source)
 
-        self.log.info(f"Downloading playlist: {utils.sourceable_str(playlist)}...")
-
+        songs = dict(playlist["songs"]).values()
         downloaded = {}
         cancel_after = False
 
-        for song in dict(playlist["songs"]).values():
+        self.log.info(
+            f"Downloading playlist: {utils.sourceable_str(playlist)} ({len(songs)} songs)..."
+        )
+
+        for song in songs:
             try:
                 dl_song = Song(**song)
                 dl_song["playlist"] = playlist
@@ -448,7 +453,7 @@ class YTMusicDL:
         self.log.status("Parsing song entries...")
         songs = [self.parser.parse_track_song(song) for song in songs]
 
-        self.log.info("Downloading library songs...")
+        self.log.info(f"Downloading library songs ({len(songs)} songs)...")
         for song in songs:
             try:
                 song["source"] = url.get_source(song["id"])
