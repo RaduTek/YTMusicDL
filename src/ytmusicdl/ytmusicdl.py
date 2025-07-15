@@ -309,18 +309,33 @@ class YTMusicDL:
                 return str(output_path)
 
             self.log.warning(f"File '{output_file}' already exists, overwriting.")
+            if output_path.is_dir():
+                output_path.rmdir()
+            else:
+                output_path.unlink()
 
-        if self.config["skip_download"]:
-            self.log.warning("Skipped audio download (--skip-download option enabled).")
-        else:
-            if "album" in song and "cover" in song["album"]:
-                self.downloader.download_cover(song["album"])
-            elif "cover" in song:
-                self.downloader.download_cover(song)
+        try:
 
-            self.downloader.download_audio(song, str(output_path))
+            if self.config["skip_download"]:
+                self.log.warning(
+                    "Skipped audio download (--skip-download option enabled)."
+                )
+            else:
+                if "album" in song and "cover" in song["album"]:
+                    self.downloader.download_cover(song["album"])
+                elif "cover" in song:
+                    self.downloader.download_cover(song)
 
-            embed_metadata(str(output_path), song, self.config)
+                self.downloader.download_audio(song, str(output_path))
+
+                embed_metadata(str(output_path), song, self.config)
+
+        except Exception:
+            # Cleanup if error occurs
+            if output_path.exists():
+                self.log.info("Cleaning up failed download...")
+                output_path.unlink()
+            raise
 
         if self.archive:
             self.archive.add_song(
