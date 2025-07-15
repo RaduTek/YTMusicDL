@@ -24,7 +24,7 @@ song_types: dict[str, SongType] = {
 class Source(TypedDict):
     url: str
     type: UrlType
-    subtype: UrlType
+    subtype: NotRequired[UrlType]
     id: str
 
 
