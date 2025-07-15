@@ -36,7 +36,9 @@ class Downloader:
 
         output_path = output_path.replace("{ext}", "%(ext)s")
 
-        silent = self.config["supress_ytdlp_output"] and not self.config["verbose"]
+        silent = self.config.get("supress_ytdlp_output", True) and not self.config.get(
+            "verbose", False
+        )
 
         ytdlp_opts = {
             "format": ytdlp_format_map[self.config["format"]][self.config["quality"]],
@@ -59,7 +61,7 @@ class Downloader:
         if self.config["cookies_file"] is not None:
             ytdlp_opts["cookiefile"] = self.config["cookies_file"]
 
-        if self.config["ytdlp_config"] is not None:
+        if self.config.get("ytdlp_config", None) is not None:
             # Load additional yt-dlp options from config
             # Merge with existing postprocessors if any
             postprocessors = ytdlp_opts.get("postprocessors", [])
