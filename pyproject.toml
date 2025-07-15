@@ -1,6 +1,6 @@
 [project]
 name = "YTMusicDL"
-version = "2.0.0a1"
+version = "2.0b1"
 authors = [
   { name="RaduTek", email="me@radutek.uk" },
 ]
