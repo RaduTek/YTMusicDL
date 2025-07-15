@@ -17,6 +17,7 @@ dependencies = [
     "ytmusicapi>=1.10.3",
     "mutagen>=1.47.0",
     "typeguard>=4.4.4",
+    "pillow>=11.0.0",
 ]
 
 [project.urls]
