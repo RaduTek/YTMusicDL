@@ -164,6 +164,7 @@ class YTMusicDL:
         if browse_id in self.album_data_cache:
             # Retrieve album data from runtime cache
             album = self.album_data_cache[browse_id]
+            self.log.debug(f"Retrieved album data from cache for browseId: {browse_id}")
         else:
             # Parse raw data from API
             album = self.parser.parse_album_data_list(data, browse_id)

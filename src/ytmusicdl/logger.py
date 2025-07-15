@@ -154,8 +154,11 @@ def print_stats(print_success: bool = True):
     error_count = counting_handler.error_count
     warning_count = counting_handler.warning_count
 
-    message = "Download "
-    message += "completed " if success_count > 0 else "failed "
+    message = (
+        f"Downloaded {success_count} songs "
+        if success_count > 0
+        else "Download failed "
+    )
     message += "with " if error_count > 0 or warning_count > 0 else ""
     message += f"{error_count} errors " if error_count > 0 else ""
     message += f"{warning_count} warnings " if warning_count > 0 else ""
