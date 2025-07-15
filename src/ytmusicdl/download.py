@@ -57,6 +57,16 @@ class Downloader:
         if self.config["cookies_file"] is not None:
             ytdlp_opts["cookiefile"] = self.config["cookies_file"]
 
+        if self.config["ytdlp_config"] is not None:
+            # Load additional yt-dlp options from config
+            # Merge with existing postprocessors if any
+            postprocessors = ytdlp_opts.get("postprocessors", [])
+            postprocessors += self.config["ytdlp_config"].get("postprocessors", [])
+
+            ytdlp_opts.update(self.config["ytdlp_config"])
+
+            ytdlp_opts["postprocessors"] = postprocessors
+
         self.log.debug(f"Generated ytdlp_opts: {ytdlp_opts}")
 
         return ytdlp_opts

@@ -54,6 +54,7 @@ class Config(TypedDict, total=False):
     unknown_placeholder: str
 
     print_config: NotRequired[bool]
+    ytdlp_config: NotRequired[dict]
 
 
 def default_config() -> Config:
