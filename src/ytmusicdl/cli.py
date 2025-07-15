@@ -184,7 +184,7 @@ def main():
 
     # Load config from global file
     try:
-        global_config_path = Path("~/.ytmusicdl/config.json").expanduser()
+        global_config_path = Path("~/.config/ytmusicdl.json").expanduser()
         if global_config_path.exists():
             import_config(global_config_path, config)
     except Exception as e:
