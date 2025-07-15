@@ -2,6 +2,7 @@ from logging import getLogger
 from ytmusicdl.types import *
 from ytmusicdl.config import Config
 import re
+import random
 import ytmusicdl.utils as utils
 import ytmusicdl.url as url
 
@@ -11,9 +12,22 @@ class Parser:
 
     log = getLogger("YTMusicDL")
     config: Config = None
+    random = random.Random()
 
     def __init__(self, config: Config):
         self.config = config
+
+    def _get_random_id(self) -> str:
+        """Generate a random ID for temporary objects"""
+        return "".join(
+            self.random.choices(
+                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", k=12
+            )
+        )
+
+    def _get_unknown_id(self) -> str:
+        """Generate an ID for unknown objects"""
+        return "unknown_" + self._get_random_id()
 
     def parse_artist(self, data: dict) -> Artist:
         """Parse an artist from a YouTube Music track response"""
@@ -67,16 +81,25 @@ class Parser:
         """Parse a song from a YouTube Music response"""
         song = Song()
 
-        song["id"] = data["videoId"]
-        song["title"] = data["title"]
+        song["id"] = data.get("videoId", None)
+        song["title"] = data.get("title", "Unknown Title")
+
+        if not song["id"]:
+            # If videoId is not available, generate a random ID
+            # This is required to not break the PlayList or AlbumList dictionary
+            song["id"] = self._get_unknown_id()
+            song["type"] = "unavailable"
+            return song
 
         if "videoType" in data and data["videoType"] in song_types:
             song["type"] = song_types[data["videoType"]]
+        else:
+            song["type"] = "unavailable"
 
-        if "thumbnail" in data and data["thumbnail"]:
+        if "thumbnail" in data and type(data["thumbnail"]) is list:
             # Response from watch playlist
             song["cover"] = self.parse_cover_art(data["thumbnail"])
-        elif "thumbnails" in data and data["thumbnails"]:
+        elif "thumbnails" in data and type(data["thumbnails"]) is list:
             song["cover"] = self.parse_cover_art(data["thumbnails"])
 
         if "duration_seconds" in data:

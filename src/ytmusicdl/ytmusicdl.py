@@ -113,7 +113,10 @@ class YTMusicDL:
         """Find audio counterparts for each song in an album"""
 
         # Check if the album is already audio
-        if all(song["type"] == "audio" for song in album["songs"].values()):
+        if all(
+            song.get("type", "unavailable") == ["audio", "unavailable"]
+            for song in album["songs"].values()
+        ):
             return
 
         items = self.downloader.get_playlist_items(

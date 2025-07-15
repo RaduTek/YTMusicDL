@@ -9,7 +9,7 @@ audio_qualities = list(get_args(AudioQuality))
 CoverFormat = Literal["png", "jpg"]
 cover_formats = list(get_args(CoverFormat))
 
-SongType = Literal["audio", "video"]
+SongType = Literal["audio", "video", "unavailable"]
 
 UrlType = Literal["watch", "playlist", "album", "artist", "library"]
 
