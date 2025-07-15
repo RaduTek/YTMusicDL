@@ -36,12 +36,14 @@ class Downloader:
 
         output_path = output_path.replace("{ext}", "%(ext)s")
 
+        silent = self.config["supress_ytdlp_output"] and not self.config["verbose"]
+
         ytdlp_opts = {
             "format": ytdlp_format_map[self.config["format"]][self.config["quality"]],
             "extractaudio": True,
-            "quiet": self.config["supress_ytdlp_output"],
-            "no_warnings": self.config["supress_ytdlp_output"],
-            "noprogress": self.config["supress_ytdlp_output"],
+            "quiet": silent,
+            "no_warnings": silent,
+            "noprogress": silent,
             "outtmpl": output_path,
             "postprocessors": [
                 {
