@@ -481,19 +481,14 @@ class YTMusicDL:
         self.log.status("Parsing song entries...")
         songs = [self.parser.parse_track_song(song) for song in songs]
 
-        self.log.info(f"Downloading library songs ({len(songs)} songs)...")
-        for song in songs:
-            try:
-                song["source"] = url.get_source(song["id"])
-                self.download_song(song)
-            except KeyboardInterrupt:
-                raise
-            except Exception as e:
-                self.log.error(
-                    f"Failed to download song: {utils.song_str(song, self.config)}\n{e}"
-                )
-                self.log.debug(traceback.format_exc())
-                continue
+        playlist = PlayList(
+            id="library_songs",
+            title="Library Songs",
+            source=url.get_source("library_songs"),
+            songs={song["id"]: song for song in songs},
+        )
+
+        self.download_playlist(playlist)
 
     def download(self, source: Source | str):
         """Download from a source"""
