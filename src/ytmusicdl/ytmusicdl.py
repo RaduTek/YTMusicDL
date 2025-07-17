@@ -24,6 +24,7 @@ class YTMusicDL:
     last_raw_data = None
     log: CustomLogger
     ytmusic: YTMusic
+    ytmusic_auth: YTMusic | None = None
     print_complete_message: bool = True
     base_path: Path = Path(".")
 
@@ -55,14 +56,14 @@ class YTMusicDL:
         # Replace preset placeholders
         fill_presets(self.config)
 
-        # Spawn a ytmusicapi object with or without authentification headers
+        # Spawn a ytmusicapi object
+        self.ytmusic = YTMusic()
+
+        # Spawn a separate ytmusicapi object for authenticated requests
         if self.config["auth_file"]:
             self.log.debug(f"Using auth file: {self.config['auth_file']}")
             auth_file = Path(self.config["auth_file"]).expanduser().resolve()
-            self.ytmusic = YTMusic(auth=str(auth_file))
-        else:
-            self.log.debug("No auth file provided, using unauthenticated mode.")
-            self.ytmusic = YTMusic()
+            self.ytmusic_auth = YTMusic(auth=str(auth_file))
 
         self.parser = Parser(self.config)
         self.downloader = Downloader(self.config)
@@ -166,8 +167,7 @@ class YTMusicDL:
                 f"Invalid source type: '{source['type']}', expected type 'album' or 'playlist' with subtype 'album'."
             )
 
-        self.last_raw_data = data = self.ytmusic.get_album(browse_id)
-
+        data = None
         album = None
 
         if browse_id in self.album_data_cache:
@@ -175,6 +175,18 @@ class YTMusicDL:
             album = self.album_data_cache[browse_id]
             self.log.debug(f"Retrieved album data from cache for browseId: {browse_id}")
         else:
+            self.log.debug(f"Fetching album data for browseId: {browse_id}")
+
+            if self.ytmusic_auth:
+                # Use authenticated YTMusic instance if available
+                # So we get songs instead of music videos in album playlist (if the auth account has Premium)
+                self.log.debug(
+                    f"Using authenticated YTMusic instance to get album data..."
+                )
+                self.last_raw_data = data = self.ytmusic_auth.get_album(browse_id)
+            else:
+                self.last_raw_data = data = self.ytmusic.get_album(browse_id)
+
             # Parse raw data from API
             album = self.parser.parse_album_data_list(data, browse_id)
 
@@ -254,9 +266,27 @@ class YTMusicDL:
 
         source = url.get_source(source, "playlist")
 
-        self.last_raw_data = data = self.ytmusic.get_playlist(
-            source["id"], limit=self.config["playlist_limit"]
-        )
+        if source["id"] == "LM" and not self.ytmusic_auth:
+            raise ValueError("You must provide an auth file to download liked songs.")
+
+        self.log.debug(f"Fetching playlist info for source: {source}")
+
+        try:
+            self.last_raw_data = data = self.ytmusic.get_playlist(
+                source["id"], limit=self.config["playlist_limit"]
+            )
+        except KeyboardInterrupt:
+            raise
+        except Exception:
+            if self.ytmusic_auth:
+                self.log.debug(
+                    "Trying to fetch playlist with authenticated YTMusic instance..."
+                )
+                self.last_raw_data = data = self.ytmusic_auth.get_playlist(
+                    source["id"], limit=self.config["playlist_limit"]
+                )
+            else:
+                raise
 
         playlist = self.parser.parse_playlist_data(data)
         playlist["source"] = source
@@ -469,12 +499,12 @@ class YTMusicDL:
     def download_library_songs(self):
         """Download all songs from the user's library"""
 
-        if not self.config["auth_file"]:
+        if not self.ytmusic_auth:
             raise ValueError("You must provide an auth file to download library songs.")
 
         self.log.status("Loading library songs...")
 
-        songs = self.ytmusic.get_library_songs(
+        songs = self.ytmusic_auth.get_library_songs(
             self.config["library_songs_limit"], order=self.config["library_order"]
         )
 
