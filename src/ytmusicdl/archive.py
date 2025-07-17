@@ -62,7 +62,9 @@ def playlist_to_archive(
         for song in playlist["songs"].values()
     ]
 
-    playlist_file = sanitize_value(playlist["title"], config) + ".m3u8"
+    playlist_file = (
+        sanitize_value(playlist["title"], config) + "." + config["playlist_extension"]
+    )
 
     return ArchivePlayList(
         title=playlist["title"],

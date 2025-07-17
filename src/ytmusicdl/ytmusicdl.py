@@ -429,7 +429,11 @@ class YTMusicDL:
                 continue
 
         if self.archive:
-            playlist_file = sanitize_value(playlist["title"], self.config) + ".m3u8"
+            playlist_file = (
+                sanitize_value(playlist["title"], self.config)
+                + "."
+                + self.config["playlist_extension"]
+            )
             self.archive.add_playlist(
                 playlist_id=playlist["id"],
                 title=playlist["title"],

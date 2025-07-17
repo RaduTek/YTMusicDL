@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typeguard import check_type, TypeCheckError
 from ytmusicdl.types import AudioFormat, AudioQuality, CoverFormat
-from typing import TypedDict, NotRequired
+from typing import Literal, TypedDict, NotRequired
 
 
 class Config(TypedDict, total=False):
@@ -52,6 +52,7 @@ class Config(TypedDict, total=False):
     time_format: str
     datetime_format: str
     unknown_placeholder: str
+    playlist_extension: Literal["m3u", "m3u8"]
 
     print_config: NotRequired[bool]
     ytdlp_config: NotRequired[dict]
@@ -97,6 +98,7 @@ def default_config() -> Config:
         "time_format": "%H-%M-%S",
         "datetime_format": "%d-%m-%Y %H-%M-%S",
         "unknown_placeholder": "Unknown",
+        "playlist_extension": "m3u",
     }
 
 
