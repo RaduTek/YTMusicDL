@@ -34,6 +34,8 @@ class Config(TypedDict, total=False):
     emojis: bool
     log: str | None
     log_verbose: bool
+    failed_download_threshold: int
+    cooldown_duration: int
 
     song_full_metadata: bool
 
@@ -84,6 +86,8 @@ def default_config() -> Config:
         "verbose": False,
         "log": None,
         "log_verbose": True,
+        "failed_download_threshold": 0,
+        "cooldown_duration": 0,
         "song_full_metadata": True,
         "album_song_instead_of_video": True,
         "artist_separator": "; ",

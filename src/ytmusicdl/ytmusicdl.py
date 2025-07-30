@@ -1,4 +1,6 @@
 import copy
+import random
+import time
 import traceback
 from pathlib import Path
 from ytmusicapi import YTMusic
@@ -71,6 +73,18 @@ class YTMusicDL:
         if self.config["archive_file"]:
             self.archive = Archive(self.config["archive_file"])
             self.log.debug(f"Archive file: {self.config["archive_file"]}")
+
+    def _cooldown(self, ratio: int = 1):
+        """Cooldown function to prevent hitting API limits"""
+        if self.config["cooldown_duration"] > 0:
+            duration = random.randint(
+                self.config["cooldown_duration"] // 2,
+                self.config["cooldown_duration"],
+            ) // ratio
+            self.log.debug(
+                f"Sleeping for {duration} seconds..."
+            )
+            time.sleep(duration)
 
     def find_audio_counterpart(self, song: Song, album: Album | None = None) -> str:
         """Find the audio counterpart of a music video song\n
@@ -318,6 +332,8 @@ class YTMusicDL:
             song_extra = self.get_song_with_album(song["source"])
             song.update(song_extra)
 
+        self._cooldown(2)
+
         self.log.status(f"Downloading song: {utils.sourceable_str(song)}...")
 
         output_file = parse_template(self.config["output_template"], song, self.config)
@@ -377,6 +393,8 @@ class YTMusicDL:
 
         self.log.success(f"Downloaded {utils.sourceable_str(song)}")
 
+        self._cooldown()
+
         return str(output_path)
 
     def download_album(self, album: AlbumList | Source | str):
@@ -395,6 +413,8 @@ class YTMusicDL:
 
             self.log.status("Loading album info...")
             album = self.get_album_list(source)
+
+        self._cooldown()
 
         songs = dict(album["songs"]).values()
         self.log.info(
@@ -430,6 +450,8 @@ class YTMusicDL:
         songs = dict(playlist["songs"]).values()
         downloaded = {}
         cancel_after = False
+
+        self._cooldown()
 
         self.log.info(
             f"Downloading playlist: {utils.sourceable_str(playlist)} ({len(songs)} songs)..."
