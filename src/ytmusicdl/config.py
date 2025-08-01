@@ -18,6 +18,7 @@ class Config(TypedDict, total=False):
     cookies_file: str | None
     cookies_from_browser: str | None
     archive_file: str | None
+    use_auth_for_album_data: bool
 
     output_template: str
     cover_format: CoverFormat
@@ -71,6 +72,7 @@ def default_config() -> Config:
         "cookies_file": None,
         "cookies_from_browser": None,
         "archive_file": None,
+        "use_auth_for_album_data": True,
         "output_template": "preset:default",
         "cover_format": "jpg",
         "cover_size": 500,

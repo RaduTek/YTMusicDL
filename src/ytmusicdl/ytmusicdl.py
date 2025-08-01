@@ -191,7 +191,7 @@ class YTMusicDL:
         else:
             self.log.debug(f"Fetching album data for browseId: {browse_id}")
 
-            if self.ytmusic_auth:
+            if self.ytmusic_auth and self.config["use_auth_for_album_data"]:
                 # Use authenticated YTMusic instance if available
                 # So we get songs instead of music videos in album playlist (if the auth account has Premium)
                 self.log.debug(
