@@ -121,6 +121,10 @@ class Downloader:
 
         image = Image.open(BytesIO(cover_data))
         output = BytesIO()
+
+        if image.mode == "RGBA" and cover_format == "jpeg":
+            image = image.convert("RGB")
+
         image.save(output, format=cover_format)
         cover_data = output.getvalue()
 
