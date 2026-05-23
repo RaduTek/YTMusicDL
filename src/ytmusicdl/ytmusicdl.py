@@ -494,7 +494,7 @@ class YTMusicDL:
             )
 
         # Write the playlist file
-        if self.config["write_playlist_file"]:
+        if self.config["write_playlist_file"] and downloaded:
             self.log.status("Writing playlist file...")
             try:
                 archive_playlist = None
