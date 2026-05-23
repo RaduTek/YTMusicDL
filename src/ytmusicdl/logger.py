@@ -55,10 +55,10 @@ class CustomStreamHandler(logging.StreamHandler):
 class EmojiFormatter(logging.Formatter):
     EMOJI_MAP = {
         "DEBUG": "🐛",
-        "INFO": "ℹ️ ",
+        "INFO": "ℹ️",
         "STATUS": "🔄",
         "SUCCESS": "✅",
-        "WARNING": "⚠️ ",
+        "WARNING": "⚠️",
         "ERROR": "❌",
         "CRITICAL": "💥",
     }
