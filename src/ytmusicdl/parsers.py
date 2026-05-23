@@ -29,6 +29,9 @@ class Parser:
         """Generate an ID for unknown objects"""
         return "unknown_" + self._get_random_id()
 
+    def is_various_artists(self, artists: list[Artist]) -> bool:
+        return any(a["name"] == VARIOUS_ARTISTS["name"] for a in artists)
+
     def parse_artist(self, data: dict) -> Artist:
         """Parse an artist from a YouTube Music track response"""
         artist = Artist()
@@ -40,7 +43,12 @@ class Parser:
 
     def parse_artists(self, data: list[dict]) -> list[Artist]:
         """Parse a list of artists from a YouTube Music track response"""
-        return [self.parse_artist(artist) for artist in data]
+        # Assume an empty artists list means a compilation album, have spotted this for a few compilation albums
+        return (
+            [self.parse_artist(artist) for artist in data]
+            if data
+            else [VARIOUS_ARTISTS]
+        )
 
     def parse_wp_track_album(self, data: dict) -> Album:
         """Parse an album from a YouTube Music watch playlist track response"""
@@ -144,6 +152,7 @@ class Parser:
         album["total"] = data["trackCount"]
         album["artists"] = self.parse_artists(data["artists"])
         album["cover"] = self.parse_cover_art(data["thumbnails"])
+        album["compilation"] = self.is_various_artists(album["artists"])
 
         return album
 

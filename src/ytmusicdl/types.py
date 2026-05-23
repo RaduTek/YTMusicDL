@@ -53,6 +53,8 @@ class Artist(TypedDict):
 
 ArtistList = dict[str, Artist]
 
+VARIOUS_ARTISTS: Artist = {"id": "VARIOUS", "name": "Various Artists"}
+
 
 class Album(Sourceable):
     playlist_id: str
@@ -61,6 +63,7 @@ class Album(Sourceable):
     duration: int
     total: int
     artists: list[Artist]
+    compilation: bool
 
 
 class Song(Sourceable):
